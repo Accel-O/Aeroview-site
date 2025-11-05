@@ -15,19 +15,19 @@ function App() {
         <div className="content-section">
           <h2>Contexte et Problématique</h2>
           <p>
-            La qualité de l'air est un enjeu environnemental et sanitaire majeur[cite: 6]. Le grand public a peu d'accès à une information claire, centralisée et actualisée sur la qualité de l'air dans sa région, malgré l'existence de nombreuses données ouvertes (open data)[cite: 8, 9].
+            La qualité de l'air est un enjeu environnemental et sanitaire majeur. Le grand public a peu d'accès à une information claire, centralisée et actualisée sur la qualité de l'air dans sa région, malgré l'existence de nombreuses données ouvertes (open data).
           </p>
         </div>
 
         <div className="content-section">
           <h2>Objectifs du Projet</h2>
           <p>
-            Ce projet vise à concevoir une application web complète permettant d'afficher, filtrer et visualiser les données sur la qualité de l'air en France ou à l'international[cite: 12].
+            Ce projet vise à concevoir une application web complète permettant d'afficher, filtrer et visualiser les données sur la qualité de l'air en France ou à l'international.
           </p>
           <ul>
-            <li>Informer les utilisateurs sur la qualité de l'air en temps réel dans leur ville ou région[cite: 14].</li>
-            <li>Présenter les informations de manière visuelle et interactive (graphiques, cartes, tableaux clairs)[cite: 15].</li>
-            <li>Sensibiliser les citoyens à l'impact de la pollution atmosphérique sur la santé[cite: 16].</li>
+            <li>Informer les utilisateurs sur la qualité de l'air en temps réel dans leur ville ou région.</li>
+            <li>Présenter les informations de manière visuelle et interactive (graphiques, cartes, tableaux clairs).</li>
+            <li>Sensibiliser les citoyens à l'impact de la pollution atmosphérique sur la santé.</li>
           </ul>
         </div>
         
