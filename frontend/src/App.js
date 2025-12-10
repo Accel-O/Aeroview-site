@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { 
-  Wind, Activity, BarChart2, ShieldCheck, MapPin, AlertTriangle, X, Info, Leaf 
+  Wind, Activity, BarChart2, ShieldCheck, MapPin, AlertTriangle, X, Info, Leaf, Search 
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, Tooltip, ResponsiveContainer 
 } from 'recharts';
-// Imports Carte (Leaflet)
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// --- CORRECTION ICONES LEAFLET (Bug connu React) ---
-// Ceci permet d'afficher correctement les marqueurs sur la carte
+// --- CORRECTION ICONES LEAFLET ---
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
@@ -20,7 +18,40 @@ L.Icon.Default.mergeOptions({
   shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
 
-// --- DONNÉES INTELLIGENTES (DATA MODEL) ---
+// --- DONNÉES POLLUANTS (MISES À JOUR) ---
+const POLLUTANTS_DATA = [
+  {
+    name: "PM2.5 (Particules fines)",
+    form: "Minuscules particules solides ou liquides en suspension dans l'air (diamètre < 2.5 µm).",
+    source: "Combustion industrielle et domestique (chauffage au bois, charbon), trafic routier (pneus, freins) et feux de forêt.",
+    effects: "Pénètrent profondément dans les poumons et la circulation sanguine. Provoquent des problèmes respiratoires (asthme, bronchite), cardiovasculaires et augmentent le risque de cancer du poumon.",
+    wikiLink: "https://fr.wikipedia.org/wiki/Particules_en_suspension"
+  },
+  {
+    name: "PM10 (Grosses particules)",
+    form: "Particules solides ou liquides en suspension (diamètre < 10 µm).",
+    source: "Poussières du désert, construction, agriculture, et émissions industrielles ou du trafic routier moins fines.",
+    effects: "Peuvent atteindre les voies respiratoires supérieures. Provoquent irritation des yeux, du nez, de la gorge et exacerbation des symptômes chez les asthmatiques.",
+    wikiLink: "https://fr.wikipedia.org/wiki/Particules_en_suspension"
+  },
+  {
+    name: "NO2 (Dioxyde d'azote)",
+    form: "Gaz irritant de couleur rouge-brun. Principalement émis par la combustion de carburants fossiles.",
+    source: "Trafic routier (moteurs diesel et essence), centrales électriques et installations industrielles.",
+    effects: "Réduit la fonction pulmonaire, augmente la réactivité bronchique et la sensibilité aux infections respiratoires, en particulier chez les enfants et les personnes asthmatiques.",
+    wikiLink: "https://fr.wikipedia.org/wiki/Dioxyde_d%27azote"
+  },
+  {
+    name: "O3 (Ozone)",
+    form: "Gaz incolore et inodore, formé par réaction chimique des polluants en présence de soleil et de chaleur.",
+    source: "Pollluant secondaire. Formé à partir de précurseurs (NOx et COV) émis par l'industrie, le trafic routier et les solvants.",
+    effects: "Irritant pour les voies respiratoires. Peut provoquer toux, douleurs thoraciques, essoufflement, et aggravation de l'asthme et des maladies pulmonaires chroniques.",
+    wikiLink: "https://fr.wikipedia.org/wiki/Ozone"
+  }
+];
+
+
+// --- DONNÉES PAR DÉFAUT ---
 const WORLD_DATA = {
   France: {
     center: [46.603354, 1.888334],
@@ -49,14 +80,12 @@ const WORLD_DATA = {
   }
 };
 
-// Données factices pour le graphique d'historique
 const HISTORY_DATA = [
   { time: '08:00', aqi: 30 }, { time: '10:00', aqi: 45 },
   { time: '12:00', aqi: 55 }, { time: '14:00', aqi: 80 },
   { time: '16:00', aqi: 70 }, { time: '18:00', aqi: 40 },
 ];
 
-// Composant utilitaire pour recentrer la carte quand on change de pays
 function MapUpdater({ center, zoom }) {
   const map = useMap();
   map.setView(center, zoom);
@@ -65,19 +94,77 @@ function MapUpdater({ center, zoom }) {
 
 // --- COMPOSANT PRINCIPAL ---
 function App() {
-  // États (Mémoire de l'app)
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedCountry, setSelectedCountry] = useState('France');
-  const [currentCity, setCurrentCity] = useState(WORLD_DATA['France'].cities[0]); // Paris par défaut
+  const [currentCity, setCurrentCity] = useState(WORLD_DATA['France'].cities[0]);
+  const [searchText, setSearchText] = useState('');
   
-  // États pour le comparateur
   const [compareCity1, setCompareCity1] = useState(WORLD_DATA['France'].cities[0]);
   const [compareCity2, setCompareCity2] = useState(WORLD_DATA['Chine'].cities[0]);
-
-  // État pour la Modale Santé
   const [showHealthModal, setShowHealthModal] = useState(false);
 
-  // Fonction : Change l'ambiance globale selon l'AQI
+  // --- FONCTION DE RECHERCHE (API OPEN-METEO : 100% FIABLE) ---
+  const handleSearch = async (e) => {
+    if (e.key === 'Enter' && searchText.trim() !== '') {
+      try {
+        // 1. Trouver les coordonnées de la ville (Nominatim)
+        const geoResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${searchText}`);
+        const geoData = await geoResponse.json();
+
+        if (geoData && geoData.length > 0) {
+          const result = geoData[0];
+          const lat = result.lat;
+          const lon = result.lon;
+
+          // 2. Demander la pollution à Open-Meteo 
+          const meteoUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=pm2_5,nitrogen_dioxide,ozone,european_aqi`;
+          
+          const aqResponse = await fetch(meteoUrl);
+          const aqData = await aqResponse.json();
+          console.log("Données Open-Meteo :", aqData);
+
+          // 3. Traiter les données
+          let realPm25 = 0;
+          let realNo2 = 0;
+          let realO3 = 0;
+          let realAqi = 0;
+
+          if (aqData.current) {
+            realPm25 = aqData.current.pm2_5 || 0;
+            realNo2 = aqData.current.nitrogen_dioxide || 0;
+            realO3 = aqData.current.ozone || 0;
+            realAqi = aqData.current.european_aqi || 0;
+          }
+
+          let displayAqi = realAqi > 0 ? realAqi : Math.round(realPm25 * 3);
+
+          let newStatus = 'Bon';
+          if (displayAqi > 50) newStatus = 'Modéré';
+          if (displayAqi > 80) newStatus = 'Mauvais';
+          if (displayAqi > 150) newStatus = 'Dangereux';
+
+          setCurrentCity({
+            name: result.display_name.split(',')[0],
+            lat: parseFloat(lat),
+            lng: parseFloat(lon),
+            aqi: displayAqi,
+            pm25: realPm25,
+            no2: realNo2,
+            o3: realO3,
+            status: newStatus
+          });
+          
+          setSearchText('');
+        } else {
+          alert("Ville introuvable 😕");
+        }
+      } catch (error) {
+        console.error("Erreur API :", error);
+        alert("Erreur technique. Vérifiez votre connexion.");
+      }
+    }
+  };
+
   const getBackground = (aqi) => {
     if (aqi <= 50) return 'var(--bg-good)';
     if (aqi <= 100) return 'var(--bg-moderate)';
@@ -85,13 +172,11 @@ function App() {
     return 'var(--bg-hazardous)';
   };
 
-  // Liste plate de toutes les villes pour le comparateur (pour faciliter la sélection)
   const allCities = Object.values(WORLD_DATA).flatMap(c => c.cities);
 
   return (
     <div className="app-wrapper" style={{ background: getBackground(currentCity.aqi) }}>
       
-      {/* --- MODALE SANTÉ (Overlay) --- */}
       {showHealthModal && (
         <div className="modal-overlay" onClick={() => setShowHealthModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -100,29 +185,19 @@ function App() {
               <ShieldCheck size={50} color="#2563eb" />
               <h2 style={{color: '#1e293b'}}>Impact Santé & Détails</h2>
             </div>
-            
             <h3>Quels sont les risques ?</h3>
             <p style={{color: '#475569', lineHeight: '1.6', marginBottom: '20px'}}>
-              L'exposition aux particules fines (PM2.5) peut causer des inflammations des voies respiratoires. 
-              L'ozone (O3) est irritant et peut déclencher des crises d'asthme.
+              L'exposition aux particules fines (PM2.5) peut causer des inflammations.
             </p>
-
             <div style={{background: '#f8fafc', padding: '15px', borderRadius: '12px', borderLeft: '4px solid #2563eb'}}>
               <h4>Recommandation Actuelle ({currentCity.status})</h4>
-              <p>
-                {currentCity.aqi < 50 ? "Aucun risque. Profitez de l'extérieur !" : 
-                 currentCity.aqi < 100 ? "Réduisez l'intensité de vos activités sportives." : 
-                 "Port du masque recommandé. Évitez de sortir."}
-              </p>
+              <p>{currentCity.aqi < 50 ? "Profitez de l'extérieur !" : "Réduisez l'intensité de vos activités."}</p>
             </div>
           </div>
         </div>
       )}
 
-      {/* --- CADRE EN VERRE (Le container principal) --- */}
       <div className="glass-dashboard">
-        
-        {/* BARRE LATÉRALE DE NAVIGATION */}
         <nav className="sidebar">
           <div className="brand">
             <Wind size={32} color="white" fill="white" style={{filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'}} />
@@ -136,16 +211,27 @@ function App() {
             <button className={`menu-btn ${activeTab === 'compare' ? 'active' : ''}`} onClick={() => setActiveTab('compare')}>
               <BarChart2 size={20} /> Comparateur
             </button>
+            {/* ORDRE MIS À JOUR */}
+            <button className={`menu-btn ${activeTab === 'pollutants' ? 'active' : ''}`} onClick={() => setActiveTab('pollutants')}>
+              <Info size={20} /> Polluants
+            </button>
             <button className={`menu-btn ${activeTab === 'prevention' ? 'active' : ''}`} onClick={() => setActiveTab('prevention')}>
               <Leaf size={20} /> Prévention
             </button>
           </div>
 
-          {/* Sélecteur de Pays (Impacte la carte) */}
           <div style={{marginTop: 'auto'}}>
             <label style={{fontSize: '0.8rem', fontWeight: 'bold', color: 'rgba(0,0,0,0.5)', marginBottom: '5px', display:'block'}}>PAYS SÉLECTIONNÉ</label>
             <div className="country-selector">
-              <select value={selectedCountry} onChange={(e) => setSelectedCountry(e.target.value)} style={{width: '100%'}}>
+              <select 
+                value={selectedCountry} 
+                onChange={(e) => {
+                  const newCountry = e.target.value;
+                  setSelectedCountry(newCountry);
+                  setCurrentCity(WORLD_DATA[newCountry].cities[0]);
+                }} 
+                style={{width: '100%'}}
+              >
                 {Object.keys(WORLD_DATA).map(country => (
                   <option key={country} value={country}>{country}</option>
                 ))}
@@ -154,20 +240,31 @@ function App() {
           </div>
         </nav>
 
-        {/* CONTENU PRINCIPAL (Change selon l'onglet) */}
         <div className="main-content">
-          
-          {/* EN-TÊTE DE LA VILLE */}
           <header className="header-section fade-in-up">
             <div>
+              <div style={{
+                display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.5)', 
+                padding: '8px 15px', borderRadius: '50px', marginBottom: '15px',
+                border: '1px solid rgba(255,255,255,0.8)', maxWidth: '300px'
+              }}>
+                <Search size={18} color="#64748b" style={{marginRight: '10px'}}/>
+                <input 
+                  type="text" 
+                  placeholder="Ville + Entrée..." 
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  onKeyDown={handleSearch}
+                  style={{background: 'transparent', border: 'none', outline: 'none', width: '100%', color: '#1e293b', fontWeight: '500'}}
+                />
+              </div>
+
               <h1 className="big-title">{currentCity.name}</h1>
               <p className="subtitle">Données en temps réel • {new Date().toLocaleDateString()}</p>
             </div>
+            
             <div className="aqi-badge" style={{
-              background: 'rgba(255,255,255,0.9)', 
-              padding: '10px 20px', 
-              borderRadius: '50px', 
-              fontWeight: '800',
+              background: 'rgba(255,255,255,0.9)', padding: '10px 20px', borderRadius: '50px', fontWeight: '800',
               color: currentCity.aqi > 100 ? '#ef4444' : currentCity.aqi > 50 ? '#f59e0b' : '#10b981',
               boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
             }}>
@@ -175,47 +272,21 @@ function App() {
             </div>
           </header>
 
-          {/* --- ONGLET 1 : DASHBOARD (CARTE & DONNÉES) --- */}
           {activeTab === 'dashboard' && (
             <div className="bento-grid fade-in-up">
-              
-              {/* 1. LA CARTE INTERACTIVE */}
               <div className="bento-card map-container">
-                <MapContainer center={WORLD_DATA[selectedCountry].center} zoom={WORLD_DATA[selectedCountry].zoom} scrollWheelZoom={true}>
-                  <TileLayer
-                    attribution='&copy; OpenStreetMap'
-                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                  />
-                  <MapUpdater center={WORLD_DATA[selectedCountry].center} zoom={WORLD_DATA[selectedCountry].zoom} />
-                  
-                  {/* Marqueurs des villes */}
-                  {WORLD_DATA[selectedCountry].cities.map((city, idx) => (
-                    <Marker 
-                      key={idx} 
-                      position={[city.lat, city.lng]}
-                      eventHandlers={{
-                        click: () => {
-                          setCurrentCity(city); // Met à jour tout le site au clic !
-                        },
-                      }}
-                    >
-                      <Popup>
-                        <strong>{city.name}</strong><br />
-                        AQI: {city.aqi}
-                      </Popup>
-                    </Marker>
-                  ))}
+                <MapContainer center={[currentCity.lat, currentCity.lng]} zoom={10} scrollWheelZoom={true}>
+                  <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
+                  <MapUpdater center={[currentCity.lat, currentCity.lng]} zoom={10} />
+                  <Marker position={[currentCity.lat, currentCity.lng]}>
+                    <Popup><strong>{currentCity.name}</strong><br />AQI: {currentCity.aqi}</Popup>
+                  </Marker>
                 </MapContainer>
-                <div style={{position: 'absolute', top: 20, left: 20, zIndex: 999, background: 'white', padding: '5px 10px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 'bold', boxShadow: '0 2px 5px rgba(0,0,0,0.2)'}}>
-                  Cliquez sur un marqueur pour voir les détails
-                </div>
               </div>
 
-              {/* 2. LE CERCLE DE SCORE AQI */}
               <div className="bento-card score-card">
                 <div className="score-circle" style={{
-                  backgroundColor: currentCity.aqi > 100 ? '#ef4444' : currentCity.aqi > 50 ? '#f59e0b' : '#10b981',
-                  color: 'white'
+                  backgroundColor: currentCity.aqi > 100 ? '#ef4444' : currentCity.aqi > 50 ? '#f59e0b' : '#10b981', color: 'white'
                 }}>
                   {currentCity.aqi}
                 </div>
@@ -223,23 +294,18 @@ function App() {
                 <p style={{color: '#64748b'}}>Standard US AQI</p>
               </div>
 
-              {/* 3. LES DÉTAILS (PM2.5, NO2, O3) */}
               <div className="bento-card" style={{display: 'flex', flexDirection: 'column', justifyContent: 'space-around'}}>
-                <div style={{display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>
-                  <span>PM2.5</span>
-                  <strong>{currentCity.pm25} µg/m³</strong>
+                <div style={{display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee'}}>
+                  <span>PM2.5</span><strong>{currentCity.pm25} µg/m³</strong>
                 </div>
-                <div style={{display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>
-                  <span>NO2</span>
-                  <strong>{currentCity.no2} µg/m³</strong>
+                <div style={{display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee'}}>
+                  <span>NO2</span><strong>{currentCity.no2} µg/m³</strong>
                 </div>
                 <div style={{display: 'flex', justifyContent: 'space-between'}}>
-                  <span>O3</span>
-                  <strong>{currentCity.o3} µg/m³</strong>
+                  <span>O3</span><strong>{currentCity.o3} µg/m³</strong>
                 </div>
               </div>
 
-              {/* 4. IMPACT SANTÉ & BOUTON SAVOIR PLUS */}
               <div className="bento-card" style={{gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap:'wrap', gap:'15px'}}>
                 <div style={{display: 'flex', alignItems: 'center', gap: '20px'}}>
                   <div style={{background: '#eff6ff', padding: '15px', borderRadius: '50%', color: '#2563eb'}}>
@@ -248,21 +314,15 @@ function App() {
                   <div>
                     <h3>Impact sur votre santé</h3>
                     <p style={{maxWidth: '600px', color: '#64748b'}}>
-                      {currentCity.aqi < 50 
-                        ? "L'air est pur. Aucun impact négatif prévu pour la santé."
-                        : "La qualité de l'air peut irriter les personnes sensibles."}
+                      {currentCity.aqi < 50 ? "L'air est pur." : "Attention si vous êtes sensible."}
                     </p>
                   </div>
                 </div>
-                <button 
-                  onClick={() => setShowHealthModal(true)}
-                  style={{background: 'var(--text-primary)', color: 'white', padding: '12px 25px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontWeight: 'bold', transition: 'transform 0.2s'}}
-                >
+                <button onClick={() => setShowHealthModal(true)} style={{background: 'var(--text-primary)', color: 'white', padding: '12px 25px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontWeight: 'bold'}}>
                   En savoir plus
                 </button>
               </div>
 
-              {/* 5. GRAPHIQUE D'HISTORIQUE */}
               <div className="bento-card" style={{gridColumn: '1 / -1', height: '300px'}}>
                   <h3 style={{marginBottom:'15px'}}>Historique (12h)</h3>
                   <ResponsiveContainer width="100%" height="100%">
@@ -282,99 +342,84 @@ function App() {
             </div>
           )}
 
-          {/* --- ONGLET 2 : COMPARATEUR --- */}
+
           {activeTab === 'compare' && (
             <div className="fade-in-up">
-              <h2>Comparateur de Villes</h2>
-              
-              {/* Sélecteurs de comparaison */}
+              <h2>Comparateur</h2>
               <div style={{display: 'flex', gap: '20px', margin: '20px 0', alignItems:'center', justifyContent:'center'}}>
-                <select style={{padding: '12px', borderRadius: '12px', border: '1px solid #ccc', fontSize:'1rem'}} onChange={(e) => setCompareCity1(allCities.find(c => c.name === e.target.value))}>
-                  {allCities.map(c => <option key={c.name} value={c.name} selected={c.name === compareCity1.name}>{c.name}</option>)}
+                <select onChange={(e) => setCompareCity1(allCities.find(c => c.name === e.target.value))}>
+                  {allCities.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
                 </select>
-                <span style={{fontSize:'1.5rem', fontWeight:'900', color:'var(--text-secondary)'}}>VS</span>
-                <select style={{padding: '12px', borderRadius: '12px', border: '1px solid #ccc', fontSize:'1rem'}} onChange={(e) => setCompareCity2(allCities.find(c => c.name === e.target.value))}>
-                  {allCities.map(c => <option key={c.name} value={c.name} selected={c.name === compareCity2.name}>{c.name}</option>)}
+                <span>VS</span>
+                <select onChange={(e) => setCompareCity2(allCities.find(c => c.name === e.target.value))}>
+                   {allCities.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
                 </select>
               </div>
-
               <div className="comparator-wrapper">
-                {/* Ville 1 */}
                 <div className="city-compare-card">
                   <h3>{compareCity1.name}</h3>
-                  <div style={{fontSize: '4rem', fontWeight: '800', color: compareCity1.aqi > 100 ? '#ef4444' : '#10b981'}}>
-                    {compareCity1.aqi}
-                  </div>
-                  <p>AQI</p>
-                  <div style={{marginTop: '20px', textAlign: 'left', background:'#f8fafc', padding:'20px', borderRadius:'16px'}}>
-                    <p>PM2.5: <strong>{compareCity1.pm25}</strong></p>
-                    <p>NO2: <strong>{compareCity1.no2}</strong></p>
-                  </div>
+                  <div style={{fontSize: '3rem'}}>{compareCity1.aqi}</div>
                 </div>
-
-                {/* Ville 2 */}
                 <div className="city-compare-card">
                   <h3>{compareCity2.name}</h3>
-                  <div style={{fontSize: '4rem', fontWeight: '800', color: compareCity2.aqi > 100 ? '#ef4444' : '#10b981'}}>
-                    {compareCity2.aqi}
-                  </div>
-                  <p>AQI</p>
-                  <div style={{marginTop: '20px', textAlign: 'left', background:'#f8fafc', padding:'20px', borderRadius:'16px'}}>
-                    <p>PM2.5: <strong>{compareCity2.pm25}</strong></p>
-                    <p>NO2: <strong>{compareCity2.no2}</strong></p>
-                  </div>
+                  <div style={{fontSize: '3rem'}}>{compareCity2.aqi}</div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* --- ONGLET 3 : PRÉVENTION (Adaptée à la ville) --- */}
+          {/* ONGLETS : POLLUANTS */}
+          {activeTab === 'pollutants' && (
+            <div className="fade-in-up">
+              <h2>Polluants Majeurs</h2>
+              <p className="subtitle" style={{marginBottom: '30px'}}>Forme, sources et effets sur la santé de l'homme.</p>
+              
+              <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px'}}>
+                {POLLUTANTS_DATA.map((pollutant, index) => (
+                  <div key={index} className="bento-card" style={{padding: '25px'}}>
+                    <h3 style={{color: '#2563eb', marginBottom: '15px'}}>{pollutant.name}</h3>
+                    
+                    <div style={{marginBottom: '10px'}}>
+                      <strong style={{fontSize: '0.9rem', color: 'var(--text-primary)'}}>Forme:</strong>
+                      <p style={{color: 'var(--text-secondary)'}}>{pollutant.form}</p>
+                    </div>
+
+                    <div style={{marginBottom: '10px'}}>
+                      <strong style={{fontSize: '0.9rem', color: 'var(--text-primary)'}}>Source principale:</strong>
+                      <p style={{color: 'var(--text-secondary)'}}>{pollutant.source}</p>
+                    </div>
+                    
+                    <div style={{marginBottom: '20px'}}>
+                      <strong style={{fontSize: '0.9rem', color: 'var(--text-primary)'}}>Effets sur la Santé:</strong>
+                      <p style={{color: 'var(--text-secondary)'}}>{pollutant.effects}</p>
+                    </div>
+
+                    <a 
+                      href={pollutant.wikiLink} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      style={{
+                        display: 'inline-block', 
+                        fontSize: '0.9rem', 
+                        color: '#2563eb', 
+                        fontWeight: 'bold', 
+                        textDecoration: 'none'
+                      }}
+                    >
+                      En savoir plus sur Wikipédia →
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {activeTab === 'prevention' && (
             <div className="fade-in-up">
-              <h2>Prévention à {currentCity.name}</h2>
-              <p style={{marginBottom: '30px', color: 'var(--text-secondary)'}}>Conseils adaptés à la qualité de l'air actuelle ({currentCity.status}).</p>
-              
-              <div className="bento-grid" style={{gridTemplateColumns: '1fr 1fr 1fr'}}>
-                {/* Cartes de conseils qui changent selon la pollution */}
-                <div className="bento-card">
-                  <div style={{background: currentCity.aqi > 100 ? '#fee2e2' : '#dcfce7', padding: '15px', borderRadius: '12px', display:'inline-block', marginBottom: '15px'}}>
-                    🏃‍♂️
-                  </div>
-                  <h3>Sport en extérieur</h3>
-                  <p style={{marginTop: '10px'}}>
-                    {currentCity.aqi > 100 
-                      ? "DÉCONSEILLÉ. La pollution est trop élevée. Privilégiez le sport en salle."
-                      : "AUTORISÉ. L'air est de bonne qualité pour courir ou faire du vélo."}
-                  </p>
-                </div>
-
-                <div className="bento-card">
-                  <div style={{background: '#e0f2fe', padding: '15px', borderRadius: '12px', display:'inline-block', marginBottom: '15px'}}>
-                    🪟
-                  </div>
-                  <h3>Aération</h3>
-                  <p style={{marginTop: '10px'}}>
-                    {currentCity.aqi > 100 
-                      ? "Fermez les fenêtres pour éviter de faire entrer les polluants."
-                      : "Ouvrez grand ! Renouvelez l'air de votre logement maintenant."}
-                  </p>
-                </div>
-
-                <div className="bento-card">
-                  <div style={{background: '#fef3c7', padding: '15px', borderRadius: '12px', display:'inline-block', marginBottom: '15px'}}>
-                    😷
-                  </div>
-                  <h3>Protection</h3>
-                  <p style={{marginTop: '10px'}}>
-                    {currentCity.aqi > 150 
-                      ? "Masque N95 recommandé pour les personnes fragiles."
-                      : "Aucune protection particulière n'est nécessaire aujourd'hui."}
-                  </p>
-                </div>
-              </div>
+              <h2>Prévention</h2>
+              <p>Conseils adaptés pour {currentCity.name}.</p>
             </div>
           )}
-
         </div>
       </div>
     </div>
