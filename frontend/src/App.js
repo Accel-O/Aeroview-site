@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { 
-  Wind, Activity, BarChart2, ShieldCheck, MapPin, AlertTriangle, X, Info, Leaf, Search, Calendar 
+  Wind, Activity, BarChart2, ShieldCheck, MapPin, AlertTriangle, X, Info, Leaf, Search, Calendar, Locate
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, Tooltip, ResponsiveContainer 
@@ -236,12 +236,64 @@ function App() {
           
           setSearchText('');
         } else {
-          alert("Ville introuvable 😕");
+          alert("Ville introuvable ");
         }
       } catch (error) {
         alert("Erreur technique.");
       }
     }
+  };
+
+  // --- FONCTION GÉOLOCALISATION ---
+  const handleLocateMe = () => {
+    if (!navigator.geolocation) {
+      alert("Votre navigateur ne supporte pas la géolocalisation.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+
+      try {
+        // 1. Trouver le nom de la ville
+        const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+        const geoData = await geoRes.json();
+        // On essaie de récupérer la ville, sinon le village, sinon "Ma Position"
+        const cityName = geoData.address.city || geoData.address.town || geoData.address.village || "Ma Position";
+
+        // 2. Récupérer la pollution 
+        const meteoUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=pm2_5,nitrogen_dioxide,ozone,european_aqi`;
+        const aqResponse = await fetch(meteoUrl);
+        const aqData = await aqResponse.json();
+
+        // 3. Mise à jour des données (
+        let realPm25 = aqData.current?.pm2_5 || 0;
+        let realAqi = aqData.current?.european_aqi || Math.round(realPm25 * 3);
+        
+        let newStatus = 'Bon';
+        if (realAqi > 50) newStatus = 'Modéré';
+        if (realAqi > 80) newStatus = 'Mauvais';
+        if (realAqi > 150) newStatus = 'Dangereux';
+
+        setCurrentCity({
+          name: cityName,
+          lat: lat,
+          lng: lon,
+          aqi: realAqi,
+          pm25: realPm25,
+          no2: aqData.current?.nitrogen_dioxide || 0,
+          o3: aqData.current?.ozone || 0,
+          status: newStatus
+        });
+
+      } catch (error) {
+        console.error(error);
+        alert("Impossible de récupérer les données pour votre position.");
+      }
+    }, () => {
+      alert("Veuillez autoriser la localisation pour utiliser cette fonction.");
+    });
   };
 
   const getBackground = (aqi) => {
@@ -336,6 +388,20 @@ function App() {
                   style={{background: 'transparent', border: 'none', outline: 'none', width: '100%', color: '#1e293b', fontWeight: '500'}}
                 />
               </div>
+              <button 
+                  onClick={handleLocateMe}
+                  title="Me localiser"
+                  style={{
+                    background: 'white', border: 'none', borderRadius: '50%', width: '45px', height: '45px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                    boxShadow: '0 4px 10px rgba(0,0,0,0.1)', color: '#2563eb', transition: 'transform 0.2s'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                  onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  <Locate size={20} />
+                </button>
+              
 
               <h1 className="big-title">{currentCity.name}</h1>
               <p className="subtitle">Données en temps réel • {new Date().toLocaleDateString()}</p>
@@ -476,6 +542,7 @@ function App() {
       </div>
     </div>
 
+    
     {/* AFFICHAGE DES RÉSULTATS */}
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px' }}>
       {[compareCity1, compareCity2].map((city, index) => (
@@ -632,6 +699,7 @@ function App() {
         </div>
       ))}
     </div>
+
 
     {/* Pied de page prévention */}
     <div style={{ 
