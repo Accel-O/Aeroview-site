@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import { 
+import {
   Wind, Activity, BarChart2, ShieldCheck, MapPin, AlertTriangle, X, Info, Leaf, Search, Calendar, Locate
 } from 'lucide-react';
-import { 
-  AreaChart, Area, XAxis, Tooltip, ResponsiveContainer 
+import {
+  AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer
 } from 'recharts';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -138,19 +138,22 @@ function App() {
   const [selectedCountry, setSelectedCountry] = useState('France');
   const [currentCity, setCurrentCity] = useState(WORLD_DATA['France'].cities[0]);
   const [searchText, setSearchText] = useState('');
-  
+
   const [compareCity1, setCompareCity1] = useState(WORLD_DATA['France'].cities[0]);
   const [compareCity2, setCompareCity2] = useState(WORLD_DATA['Chine'].cities[0]);
   const [showHealthModal, setShowHealthModal] = useState(false);
   const [historyData, setHistoryData] = useState([]);
   const [forecastData, setForecastData] = useState([]);
-
+  useEffect(() => {
+    const initialCity = WORLD_DATA['France'].cities[0]; // C'est Paris
+    fetchPollutionData(initialCity.lat, initialCity.lng, initialCity.name);
+  }, []);
   // --- FONCTION INTELLIGENTE DE RÉCUPÉRATION ---
   const fetchPollutionData = async (lat, lon, cityName) => {
     try {
       // On demande : Actuel + Historique (7 jours) + Prévision (4 jours)
       const meteoUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=pm2_5,nitrogen_dioxide,ozone,european_aqi&hourly=european_aqi&past_days=7&forecast_days=4`;
-      
+
       const response = await fetch(meteoUrl);
       const data = await response.json();
 
@@ -169,7 +172,11 @@ function App() {
         no2: data.current?.nitrogen_dioxide || 0,
         o3: data.current?.ozone || 0,
         status: newStatus
+
+
       });
+
+
 
       // 2. Traitement de l'historique et des prévisions
       const now = new Date();
@@ -180,7 +187,7 @@ function App() {
         const date = new Date(t);
         const item = {
           // Formatage de la date (ex: "Lun 14h")
-          time: date.toLocaleDateString('fr-FR', { weekday: 'short', hour: '2-digit' }), 
+          time: date.toLocaleDateString('fr-FR', { weekday: 'short', hour: '2-digit' }),
           fullDate: date,
           aqi: data.hourly.european_aqi[i]
         };
@@ -200,48 +207,48 @@ function App() {
       alert("Impossible de récupérer les données complètes.");
     }
   };
-  
+
   const handleCompareSearch = async (e, citySlot) => {
-  if (e.key === 'Enter' && e.target.value.trim() !== '') {
-    const query = e.target.value;
-    try {
-      const geoResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`);
-      const geoData = await geoResponse.json();
+    if (e.key === 'Enter' && e.target.value.trim() !== '') {
+      const query = e.target.value;
+      try {
+        const geoResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`);
+        const geoData = await geoResponse.json();
 
-      if (geoData && geoData.length > 0) {
-        const result = geoData[0];
-        const lat = result.lat;
-        const lon = result.lon;
+        if (geoData && geoData.length > 0) {
+          const result = geoData[0];
+          const lat = result.lat;
+          const lon = result.lon;
 
-        const meteoUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=pm2_5,nitrogen_dioxide,ozone,european_aqi`;
-        const aqResponse = await fetch(meteoUrl);
-        const aqData = await aqResponse.json();
+          const meteoUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=pm2_5,nitrogen_dioxide,ozone,european_aqi`;
+          const aqResponse = await fetch(meteoUrl);
+          const aqData = await aqResponse.json();
 
-        let realPm25 = aqData.current?.pm2_5 || 0;
-        let realAqi = aqData.current?.european_aqi || Math.round(realPm25 * 3);
-        
-        const newCityData = {
-          name: result.display_name.split(',')[0],
-          aqi: realAqi,
-          pm25: realPm25,
-          no2: aqData.current?.nitrogen_dioxide || 0,
-          o3: aqData.current?.ozone || 0,
-          status: realAqi > 100 ? 'Dangereux' : realAqi > 80 ? 'Mauvais' : realAqi > 50 ? 'Modéré' : 'Bon'
-        };
+          let realPm25 = aqData.current?.pm2_5 || 0;
+          let realAqi = aqData.current?.european_aqi || Math.round(realPm25 * 3);
 
-        if (citySlot === 1) {
-          setCompareCity1(newCityData);
-          setCompareSearch1('');
-        } else {
-          setCompareCity2(newCityData);
-          setCompareSearch2('');
+          const newCityData = {
+            name: result.display_name.split(',')[0],
+            aqi: realAqi,
+            pm25: realPm25,
+            no2: aqData.current?.nitrogen_dioxide || 0,
+            o3: aqData.current?.ozone || 0,
+            status: realAqi > 100 ? 'Dangereux' : realAqi > 80 ? 'Mauvais' : realAqi > 50 ? 'Modéré' : 'Bon'
+          };
+
+          if (citySlot === 1) {
+            setCompareCity1(newCityData);
+            setCompareSearch1('');
+          } else {
+            setCompareCity2(newCityData);
+            setCompareSearch2('');
+          }
         }
+      } catch (error) {
+        alert("Erreur lors de la recherche comparative.");
       }
-    } catch (error) {
-      alert("Erreur lors de la recherche comparative.");
     }
-  }
-};
+  };
 
   // --- FONCTION DE RECHERCHE ---
   const handleSearch = async (e) => {
@@ -290,7 +297,7 @@ function App() {
         // 3. Mise à jour des données (
         let realPm25 = aqData.current?.pm2_5 || 0;
         let realAqi = aqData.current?.european_aqi || Math.round(realPm25 * 3);
-        
+
         let newStatus = 'Bon';
         if (realAqi > 50) newStatus = 'Modéré';
         if (realAqi > 80) newStatus = 'Mauvais';
@@ -327,20 +334,20 @@ function App() {
 
   return (
     <div className="app-wrapper" style={{ background: getBackground(currentCity.aqi) }}>
-      
+
       {showHealthModal && (
         <div className="modal-overlay" onClick={() => setShowHealthModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <button className="close-modal" onClick={() => setShowHealthModal(false)}><X size={20}/></button>
-            <div style={{textAlign: 'center', marginBottom: '20px'}}>
+            <button className="close-modal" onClick={() => setShowHealthModal(false)}><X size={20} /></button>
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
               <ShieldCheck size={50} color="#2563eb" />
-              <h2 style={{color: '#1e293b'}}>Impact Santé & Détails</h2>
+              <h2 style={{ color: '#1e293b' }}>Impact Santé & Détails</h2>
             </div>
             <h3>Quels sont les risques ?</h3>
-            <p style={{color: '#475569', lineHeight: '1.6', marginBottom: '20px'}}>
+            <p style={{ color: '#475569', lineHeight: '1.6', marginBottom: '20px' }}>
               L'exposition aux particules fines (PM2.5) peut causer des inflammations.
             </p>
-            <div style={{background: '#f8fafc', padding: '15px', borderRadius: '12px', borderLeft: '4px solid #2563eb'}}>
+            <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '12px', borderLeft: '4px solid #2563eb' }}>
               <h4>Recommandation Actuelle ({currentCity.status})</h4>
               <p>{currentCity.aqi < 50 ? "Profitez de l'extérieur !" : "Réduisez l'intensité de vos activités."}</p>
             </div>
@@ -351,7 +358,7 @@ function App() {
       <div className="glass-dashboard">
         <nav className="sidebar">
           <div className="brand">
-            <Wind size={32} color="white" fill="white" style={{filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'}} />
+            <Wind size={32} color="white" fill="white" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }} />
             <span>AeroView</span>
           </div>
 
@@ -373,17 +380,17 @@ function App() {
             </button>
           </div>
 
-          <div style={{marginTop: 'auto'}}>
-            <label style={{fontSize: '0.8rem', fontWeight: 'bold', color: 'rgba(0,0,0,0.5)', marginBottom: '5px', display:'block'}}>PAYS SÉLECTIONNÉ</label>
+          <div style={{ marginTop: 'auto' }}>
+            <label style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'rgba(0,0,0,0.5)', marginBottom: '5px', display: 'block' }}>PAYS SÉLECTIONNÉ</label>
             <div className="country-selector">
-              <select 
-                value={selectedCountry} 
+              <select
+                value={selectedCountry}
                 onChange={(e) => {
                   const newCountry = e.target.value;
                   setSelectedCountry(newCountry);
                   setCurrentCity(WORLD_DATA[newCountry].cities[0]);
-                }} 
-                style={{width: '100%'}}
+                }}
+                style={{ width: '100%' }}
               >
                 {Object.keys(WORLD_DATA).map(country => (
                   <option key={country} value={country}>{country}</option>
@@ -397,39 +404,39 @@ function App() {
           <header className="header-section fade-in-up">
             <div>
               <div style={{
-                display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.5)', 
+                display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.5)',
                 padding: '8px 15px', borderRadius: '50px', marginBottom: '15px',
                 border: '1px solid rgba(255,255,255,0.8)', maxWidth: '300px'
               }}>
-                <Search size={18} color="#64748b" style={{marginRight: '10px'}}/>
-                <input 
-                  type="text" 
-                  placeholder="Ville + Entrée..." 
+                <Search size={18} color="#64748b" style={{ marginRight: '10px' }} />
+                <input
+                  type="text"
+                  placeholder="Ville + Entrée..."
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
                   onKeyDown={handleSearch}
-                  style={{background: 'transparent', border: 'none', outline: 'none', width: '100%', color: '#1e293b', fontWeight: '500'}}
+                  style={{ background: 'transparent', border: 'none', outline: 'none', width: '100%', color: '#1e293b', fontWeight: '500' }}
                 />
               </div>
-              <button 
-                  onClick={handleLocateMe}
-                  title="Me localiser"
-                  style={{
-                    background: 'white', border: 'none', borderRadius: '50%', width: '45px', height: '45px',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                    boxShadow: '0 4px 10px rgba(0,0,0,0.1)', color: '#2563eb', transition: 'transform 0.2s'
-                  }}
-                  onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-                  onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                >
-                  <Locate size={20} />
-                </button>
-              
+              <button
+                onClick={handleLocateMe}
+                title="Me localiser"
+                style={{
+                  background: 'white', border: 'none', borderRadius: '50%', width: '45px', height: '45px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                  boxShadow: '0 4px 10px rgba(0,0,0,0.1)', color: '#2563eb', transition: 'transform 0.2s'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                <Locate size={20} />
+              </button>
+
 
               <h1 className="big-title">{currentCity.name}</h1>
               <p className="subtitle">Données en temps réel • {new Date().toLocaleDateString()}</p>
             </div>
-            
+
             <div className="aqi-badge" style={{
               background: 'rgba(255,255,255,0.9)', padding: '10px 20px', borderRadius: '50px', fontWeight: '800',
               color: currentCity.aqi > 100 ? '#ef4444' : currentCity.aqi > 50 ? '#f59e0b' : '#10b981',
@@ -458,71 +465,90 @@ function App() {
                   {currentCity.aqi}
                 </div>
                 <h3>Indice de Qualité</h3>
-                <p style={{color: '#64748b'}}>Standard US AQI</p>
+                <p style={{ color: '#64748b' }}>Standard US AQI</p>
               </div>
 
-              <div className="bento-card" style={{display: 'flex', flexDirection: 'column', justifyContent: 'space-around'}}>
-                <div style={{display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee'}}>
+              <div className="bento-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-around' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee' }}>
                   <span>PM2.5</span><strong>{currentCity.pm25} µg/m³</strong>
                 </div>
-                <div style={{display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee'}}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee' }}>
                   <span>NO2</span><strong>{currentCity.no2} µg/m³</strong>
                 </div>
-                <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span>O3</span><strong>{currentCity.o3} µg/m³</strong>
                 </div>
               </div>
 
-              <div className="bento-card" style={{gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap:'wrap', gap:'15px'}}>
-                <div style={{display: 'flex', alignItems: 'center', gap: '20px'}}>
-                  <div style={{background: '#eff6ff', padding: '15px', borderRadius: '50%', color: '#2563eb'}}>
+              <div className="bento-card" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '15px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                  <div style={{ background: '#eff6ff', padding: '15px', borderRadius: '50%', color: '#2563eb' }}>
                     <AlertTriangle size={30} />
                   </div>
                   <div>
                     <h3>Impact sur votre santé</h3>
-                    <p style={{maxWidth: '600px', color: '#64748b'}}>
+                    <p style={{ maxWidth: '600px', color: '#64748b' }}>
                       {currentCity.aqi < 50 ? "L'air est pur." : "Attention si vous êtes sensible."}
                     </p>
                   </div>
                 </div>
-                <button onClick={() => setShowHealthModal(true)} style={{background: 'var(--text-primary)', color: 'white', padding: '12px 25px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontWeight: 'bold'}}>
+                <button onClick={() => setShowHealthModal(true)} style={{ background: 'var(--text-primary)', color: 'white', padding: '12px 25px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
                   En savoir plus
                 </button>
               </div>
 
-              <div className="bento-card" style={{gridColumn: '1 / -1', height: '300px'}}>
-                  <h3 style={{marginBottom:'15px'}}>Historique (7 Jours)</h3>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={historyData}>
-                      <defs>
-                        <linearGradient id="colorAqi" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#2563eb" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <XAxis dataKey="time" />
-                      <Tooltip />
-                      <Area type="monotone" dataKey="aqi" stroke="#2563eb" fillOpacity={1} fill="url(#colorAqi)" />
-                    </AreaChart>
-                  </ResponsiveContainer>
+              {/* --- BLOC HISTORIQUE CORRIGÉ --- */}
+              <div className="bento-card" style={{ gridColumn: '1 / -1', height: '300px' }}>
+                <h3 style={{ marginBottom: '15px' }}>Historique (7 Jours)</h3>
+                <ResponsiveContainer width="100%" height="100%">
+                  {/* Ajout d'une marge à gauche pour l'axe Y */}
+                  <AreaChart data={historyData} margin={{ left: -20, right: 10 }}>
+                    <defs>
+                      <linearGradient id="colorAqi" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#2563eb" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+
+                    {/* AJOUT : La grille et l'axe des Y */}
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+                    <XAxis dataKey="time" minTickGap={30} />
+                    <YAxis
+                      tick={{ fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                      tickCount={5}
+                    />
+
+                    <Tooltip />
+                    <Area
+                      type="monotone"
+                      dataKey="aqi"
+                      stroke="#2563eb"
+                      fillOpacity={1}
+                      fill="url(#colorAqi)"
+                      strokeWidth={3}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
             </div>
-          )}{}
-               {/* --- NOUVEL ONGLET : PRÉVISIONS --- */}
+          )}{ }
+          {/* --- NOUVEL ONGLET : PRÉVISIONS --- */}
           {activeTab === 'forecast' && (
             <div className="fade-in-up">
               <h2>Prévisions (4 Jours)</h2>
-              <p className="subtitle" style={{marginBottom: '30px'}}>Estimation de la qualité de l'air pour les prochains jours.</p>
-              
-              <div className="bento-grid" style={{gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))'}}>
+              <p className="subtitle" style={{ marginBottom: '30px' }}>Estimation de la qualité de l'air pour les prochains jours.</p>
+
+              <div className="bento-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
                 {/* On regroupe par jour pour simplifier l'affichage (Midi de chaque jour) */}
                 {forecastData
                   .filter(d => d.fullDate.getHours() === 12) // On prend midi comme référence
                   .map((day, idx) => (
-                    <div key={idx} className="bento-card" style={{textAlign: 'center', padding: '20px'}}>
-                      <h3 style={{textTransform: 'capitalize', color: '#64748b'}}>{day.fullDate.toLocaleDateString('fr-FR', {weekday: 'long'})}</h3>
-                      <p style={{fontSize: '0.9rem', marginBottom: '15px'}}>{day.fullDate.toLocaleDateString()}</p>
-                      
+                    <div key={idx} className="bento-card" style={{ textAlign: 'center', padding: '20px' }}>
+                      <h3 style={{ textTransform: 'capitalize', color: '#64748b' }}>{day.fullDate.toLocaleDateString('fr-FR', { weekday: 'long' })}</h3>
+                      <p style={{ fontSize: '0.9rem', marginBottom: '15px' }}>{day.fullDate.toLocaleDateString()}</p>
+
                       <div style={{
                         width: '60px', height: '60px', borderRadius: '50%', margin: '0 auto 15px auto',
                         background: day.aqi > 50 ? (day.aqi > 100 ? '#ef4444' : '#f59e0b') : '#10b981',
@@ -530,167 +556,183 @@ function App() {
                       }}>
                         {day.aqi}
                       </div>
-                      
-                      <p style={{fontWeight: 'bold', color: '#1e293b'}}>
+
+                      <p style={{ fontWeight: 'bold', color: '#1e293b' }}>
                         {day.aqi > 50 ? (day.aqi > 100 ? 'Mauvais' : 'Moyen') : 'Bon'}
                       </p>
                     </div>
-                ))}
+                  ))}
               </div>
 
-              {/* Graphique de tendance future */}
-              <div className="bento-card" style={{marginTop: '30px', height: '300px'}}>
-                  <h3>Tendance détaillée</h3>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={forecastData}>
-                      <defs>
-                        <linearGradient id="colorForecast" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#9333ea" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#9333ea" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <XAxis dataKey="time" minTickGap={30} />
-                      <Tooltip />
-                      <Area type="monotone" dataKey="aqi" stroke="#9333ea" fill="url(#colorForecast)" />
-                    </AreaChart>
-                  </ResponsiveContainer>
+              <div className="bento-card" style={{ marginTop: '30px', height: '300px' }}>
+                <h3>Tendance détaillée</h3>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={forecastData} margin={{ left: -20, right: 10 }}> {/* Petite marge pour pas que l'axe soit coupé */}
+                    <defs>
+                      <linearGradient id="colorForecast" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#9333ea" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#9333ea" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+
+                    {/* --- LES AJOUTS SONT ICI --- */}
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+                    <XAxis dataKey="time" minTickGap={30} />
+                    <YAxis
+                      tick={{ fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                      tickCount={6}
+                    />
+                    {/* --------------------------- */}
+
+                    <Tooltip />
+                    <Area
+                      type="monotone"
+                      dataKey="aqi"
+                      stroke="#9333ea"
+                      fill="url(#colorForecast)"
+                      strokeWidth={3}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
             </div>
           )}
 
           {activeTab === 'compare' && (
-  <div className="fade-in-up">
-    <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-      <h2 style={{ fontSize: '2rem', color: '#1e293b' }}>Comparateur de Villes</h2>
-      <p className="subtitle">Recherchez deux villes pour comparer leur qualité de l'air</p>
-    </div>
+            <div className="fade-in-up">
+              <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+                <h2 style={{ fontSize: '2rem', color: '#1e293b' }}>Comparateur de Villes</h2>
+                <p className="subtitle">Recherchez deux villes pour comparer leur qualité de l'air</p>
+              </div>
 
-    {/* BARRES DE RECHERCHE COMPARATIVES */}
-    <div style={{ 
-      display: 'flex', 
-      gap: '20px', 
-      margin: '20px auto 40px auto', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
-      flexWrap: 'wrap',
-      maxWidth: '800px' 
-    }}>
-      {/* Barre 1 */}
-      <div style={{ flex: 1, minWidth: '250px', position: 'relative' }}>
-        <div className="search-bar-container" style={{
-          display: 'flex', alignItems: 'center', background: 'white', 
-          padding: '10px 15px', borderRadius: '12px', border: '1px solid #ddd'
-        }}>
-          <Search size={16} color="#64748b" style={{marginRight: '10px'}}/>
-          <input 
-            type="text" 
-            placeholder="Comparer la ville 1..." 
-            value={compareSearch1}
-            onChange={(e) => setCompareSearch1(e.target.value)}
-            onKeyDown={(e) => handleCompareSearch(e, 1)}
-            style={{border: 'none', outline: 'none', width: '100%', fontSize: '0.9rem'}}
-          />
-        </div>
-      </div>
+              {/* BARRES DE RECHERCHE COMPARATIVES */}
+              <div style={{
+                display: 'flex',
+                gap: '20px',
+                margin: '20px auto 40px auto',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexWrap: 'wrap',
+                maxWidth: '800px'
+              }}>
+                {/* Barre 1 */}
+                <div style={{ flex: 1, minWidth: '250px', position: 'relative' }}>
+                  <div className="search-bar-container" style={{
+                    display: 'flex', alignItems: 'center', background: 'white',
+                    padding: '10px 15px', borderRadius: '12px', border: '1px solid #ddd'
+                  }}>
+                    <Search size={16} color="#64748b" style={{ marginRight: '10px' }} />
+                    <input
+                      type="text"
+                      placeholder="Comparer la ville 1..."
+                      value={compareSearch1}
+                      onChange={(e) => setCompareSearch1(e.target.value)}
+                      onKeyDown={(e) => handleCompareSearch(e, 1)}
+                      style={{ border: 'none', outline: 'none', width: '100%', fontSize: '0.9rem' }}
+                    />
+                  </div>
+                </div>
 
-      <div style={{ background: '#1e293b', color: 'white', padding: '8px 15px', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 'bold' }}>VS</div>
+                <div style={{ background: '#1e293b', color: 'white', padding: '8px 15px', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 'bold' }}>VS</div>
 
-      {/* Barre 2 */}
-      <div style={{ flex: 1, minWidth: '250px' }}>
-        <div className="search-bar-container" style={{
-          display: 'flex', alignItems: 'center', background: 'white', 
-          padding: '10px 15px', borderRadius: '12px', border: '1px solid #ddd'
-        }}>
-          <Search size={16} color="#64748b" style={{marginRight: '10px'}}/>
-          <input 
-            type="text" 
-            placeholder="Comparer la ville 2..." 
-            value={compareSearch2}
-            onChange={(e) => setCompareSearch2(e.target.value)}
-            onKeyDown={(e) => handleCompareSearch(e, 2)}
-            style={{border: 'none', outline: 'none', width: '100%', fontSize: '0.9rem'}}
-          />
-        </div>
-      </div>
-    </div>
+                {/* Barre 2 */}
+                <div style={{ flex: 1, minWidth: '250px' }}>
+                  <div className="search-bar-container" style={{
+                    display: 'flex', alignItems: 'center', background: 'white',
+                    padding: '10px 15px', borderRadius: '12px', border: '1px solid #ddd'
+                  }}>
+                    <Search size={16} color="#64748b" style={{ marginRight: '10px' }} />
+                    <input
+                      type="text"
+                      placeholder="Comparer la ville 2..."
+                      value={compareSearch2}
+                      onChange={(e) => setCompareSearch2(e.target.value)}
+                      onKeyDown={(e) => handleCompareSearch(e, 2)}
+                      style={{ border: 'none', outline: 'none', width: '100%', fontSize: '0.9rem' }}
+                    />
+                  </div>
+                </div>
+              </div>
 
-    
-    {/* AFFICHAGE DES RÉSULTATS */}
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px' }}>
-      {[compareCity1, compareCity2].map((city, index) => (
-        <div key={index} className="bento-card fade-in-up" style={{ padding: '30px', textAlign: 'center', background: 'rgba(255,255,255,0.8)' }}>
-          <div style={{display:'flex', alignItems:'center', justifyContent:'center', gap:'8px', color:'#64748b', marginBottom:'10px'}}>
-            <MapPin size={16}/>
-            <h3 style={{ fontSize: '1.4rem', margin: 0 }}>{city.name}</h3>
-          </div>
-          <div style={{ 
-            fontSize: '4.5rem', 
-            fontWeight: '900', 
-            color: city.aqi > 100 ? '#ef4444' : city.aqi > 50 ? '#f59e0b' : '#10b981', 
-            lineHeight: '1'
-          }}>
-            {city.aqi}
-          </div>
-          <p style={{ fontWeight: 'bold', color: '#64748b', marginBottom: '25px', letterSpacing: '1px' }}>
-            {city.status.toUpperCase()}
-          </p>
-          <div style={{ textAlign: 'left', marginTop: '20px', background: 'white', padding: '15px', borderRadius: '12px' }}>
-            <PollutantComparisonBar label="PM2.5" value={city.pm25} max={150} color="#3b82f6" />
-            <PollutantComparisonBar label="NO2" value={city.no2} max={100} color="#8b5cf6" />
-            <PollutantComparisonBar label="Ozone" value={city.o3} max={180} color="#06b6d4" />
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
+
+              {/* AFFICHAGE DES RÉSULTATS */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px' }}>
+                {[compareCity1, compareCity2].map((city, index) => (
+                  <div key={index} className="bento-card fade-in-up" style={{ padding: '30px', textAlign: 'center', background: 'rgba(255,255,255,0.8)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#64748b', marginBottom: '10px' }}>
+                      <MapPin size={16} />
+                      <h3 style={{ fontSize: '1.4rem', margin: 0 }}>{city.name}</h3>
+                    </div>
+                    <div style={{
+                      fontSize: '4.5rem',
+                      fontWeight: '900',
+                      color: city.aqi > 100 ? '#ef4444' : city.aqi > 50 ? '#f59e0b' : '#10b981',
+                      lineHeight: '1'
+                    }}>
+                      {city.aqi}
+                    </div>
+                    <p style={{ fontWeight: 'bold', color: '#64748b', marginBottom: '25px', letterSpacing: '1px' }}>
+                      {city.status.toUpperCase()}
+                    </p>
+                    <div style={{ textAlign: 'left', marginTop: '20px', background: 'white', padding: '15px', borderRadius: '12px' }}>
+                      <PollutantComparisonBar label="PM2.5" value={city.pm25} max={150} color="#3b82f6" />
+                      <PollutantComparisonBar label="NO2" value={city.no2} max={100} color="#8b5cf6" />
+                      <PollutantComparisonBar label="Ozone" value={city.o3} max={180} color="#06b6d4" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {activeTab === 'pollutants' && (
             <div className="fade-in-up">
               <h2>Polluants Majeurs</h2>
-              <p className="subtitle" style={{marginBottom: '30px'}}>Comprendre les indices et les substances nocives.</p>
+              <p className="subtitle" style={{ marginBottom: '30px' }}>Comprendre les indices et les substances nocives.</p>
 
               {/* --- TABLEAU DES SEUILS AQI AJOUTÉ --- */}
-              <div className="bento-card" style={{marginBottom: '40px', padding: '25px', overflowX: 'auto'}}>
-                <h3 style={{marginBottom: '20px', color: '#1e293b'}}>Échelle de l'Indice de Qualité de l'Air (AQI)</h3>
-                
-                
-
-[Image of air quality index scale chart]
+              <div className="bento-card" style={{ marginBottom: '40px', padding: '25px', overflowX: 'auto' }}>
+                <h3 style={{ marginBottom: '20px', color: '#1e293b' }}>Échelle de l'Indice de Qualité de l'Air (AQI)</h3>
 
 
-                <table style={{width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px'}}>
+
+                [Image of air quality index scale chart]
+
+
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
                   <thead>
-                    <tr style={{borderBottom: '2px solid #f1f5f9'}}>
-                      <th style={{padding: '12px', color: '#64748b'}}>Valeur AQI</th>
-                      <th style={{padding: '12px', color: '#64748b'}}>Niveau</th>
-                      <th style={{padding: '12px', color: '#64748b'}}>Conséquences pour la santé</th>
+                    <tr style={{ borderBottom: '2px solid #f1f5f9' }}>
+                      <th style={{ padding: '12px', color: '#64748b' }}>Valeur AQI</th>
+                      <th style={{ padding: '12px', color: '#64748b' }}>Niveau</th>
+                      <th style={{ padding: '12px', color: '#64748b' }}>Conséquences pour la santé</th>
                     </tr>
                   </thead>
                   <tbody>
                     {AQI_SCALE.map((item, idx) => (
-                      <tr key={idx} style={{borderBottom: '1px solid #f8fafc'}}>
-                        <td style={{padding: '15px', fontWeight: 'bold'}}>{item.range}</td>
-                        <td style={{padding: '15px'}}>
+                      <tr key={idx} style={{ borderBottom: '1px solid #f8fafc' }}>
+                        <td style={{ padding: '15px', fontWeight: 'bold' }}>{item.range}</td>
+                        <td style={{ padding: '15px' }}>
                           <span style={{
-                            background: item.color, color: 'white', padding: '5px 12px', 
+                            background: item.color, color: 'white', padding: '5px 12px',
                             borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold'
                           }}>{item.level}</span>
                         </td>
-                        <td style={{padding: '15px', color: '#475569', fontSize: '0.9rem'}}>{item.desc}</td>
+                        <td style={{ padding: '15px', color: '#475569', fontSize: '0.9rem' }}>{item.desc}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              
-              <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px'}}>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
                 {POLLUTANTS_DATA.map((pollutant, index) => (
-                  <div key={index} className="bento-card" style={{padding: '25px'}}>
-                    <h3 style={{color: '#2563eb', marginBottom: '15px'}}>{pollutant.name}</h3>
-                    <div style={{marginBottom: '10px'}}><strong style={{fontSize: '0.9rem', color: 'var(--text-primary)'}}>Forme:</strong><p style={{color: 'var(--text-secondary)'}}>{pollutant.form}</p></div>
-                    <div style={{marginBottom: '10px'}}><strong style={{fontSize: '0.9rem', color: 'var(--text-primary)'}}>Source principale:</strong><p style={{color: 'var(--text-secondary)'}}>{pollutant.source}</p></div>
-                    <div style={{marginBottom: '20px'}}><strong style={{fontSize: '0.9rem', color: 'var(--text-primary)'}}>Effets sur la Santé:</strong><p style={{color: 'var(--text-secondary)'}}>{pollutant.effects}</p></div>
+                  <div key={index} className="bento-card" style={{ padding: '25px' }}>
+                    <h3 style={{ color: '#2563eb', marginBottom: '15px' }}>{pollutant.name}</h3>
+                    <div style={{ marginBottom: '10px' }}><strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Forme:</strong><p style={{ color: 'var(--text-secondary)' }}>{pollutant.form}</p></div>
+                    <div style={{ marginBottom: '10px' }}><strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Source principale:</strong><p style={{ color: 'var(--text-secondary)' }}>{pollutant.source}</p></div>
+                    <div style={{ marginBottom: '20px' }}><strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Effets sur la Santé:</strong><p style={{ color: 'var(--text-secondary)' }}>{pollutant.effects}</p></div>
                     <a href={pollutant.wikiLink} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', fontSize: '0.9rem', color: '#2563eb', fontWeight: 'bold', textDecoration: 'none' }}>En savoir plus sur Wikipédia →</a>
                   </div>
                 ))}
@@ -699,95 +741,95 @@ function App() {
           )}
 
           {activeTab === 'prevention' && (
-  <div className="fade-in-up">
-    <div style={{ marginBottom: '30px' }}>
-      <h2>Conseils de Prévention</h2>
-      <p className="subtitle">
-        Mesures recommandées pour <strong>{currentCity.name}</strong> (AQI: {currentCity.aqi})
-      </p>
-    </div>
+            <div className="fade-in-up">
+              <div style={{ marginBottom: '30px' }}>
+                <h2>Conseils de Prévention</h2>
+                <p className="subtitle">
+                  Mesures recommandées pour <strong>{currentCity.name}</strong> (AQI: {currentCity.aqi})
+                </p>
+              </div>
 
-    {/* Bannière d'alerte dynamique selon l'AQI */}
-    <div style={{
-      background: currentCity.aqi > 100 ? '#fef2f2' : '#f0fdf4',
-      borderLeft: `5px solid ${currentCity.aqi > 100 ? '#ef4444' : '#10b981'}`,
-      padding: '20px',
-      borderRadius: '12px',
-      marginBottom: '30px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '15px'
-    }}>
-      <AlertTriangle color={currentCity.aqi > 100 ? '#ef4444' : '#10b981'} size={28} />
-      <div>
-        <h4 style={{ margin: 0, color: '#1e293b' }}>Note globale pour aujourd'hui</h4>
-        <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
-          {currentCity.aqi > 100 
-            ? "La qualité de l'air est dégradée. Suivez scrupuleusement les conseils ci-dessous." 
-            : "Les conditions sont globalement favorables, mais quelques précautions restent utiles."}
-        </p>
-      </div>
-    </div>
-
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-      gap: '20px'
-    }}>
-      {Object.entries(PREVENTION_TIPS).map(([key, category]) => (
-        <div key={key} className="bento-card" style={{ padding: '25px', position: 'relative' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            marginBottom: '20px',
-            color: category.color
-          }}>
-            {category.icon}
-            <h3 style={{ margin: 0, color: '#1e293b' }}>{category.title}</h3>
-          </div>
-          
-          <ul style={{ padding: 0, listStyle: 'none' }}>
-            {category.tips.map((tip, i) => (
-              <li key={i} style={{
+              {/* Bannière d'alerte dynamique selon l'AQI */}
+              <div style={{
+                background: currentCity.aqi > 100 ? '#fef2f2' : '#f0fdf4',
+                borderLeft: `5px solid ${currentCity.aqi > 100 ? '#ef4444' : '#10b981'}`,
+                padding: '20px',
+                borderRadius: '12px',
+                marginBottom: '30px',
                 display: 'flex',
-                gap: '10px',
-                marginBottom: '15px',
-                fontSize: '0.95rem',
-                color: '#475569',
-                lineHeight: '1.4'
+                alignItems: 'center',
+                gap: '15px'
               }}>
-                <div style={{ 
-                  minWidth: '6px', 
-                  height: '6px', 
-                  borderRadius: '50%', 
-                  background: category.color, 
-                  marginTop: '7px' 
-                }} />
-                {tip}
-              </li>
-            ))}
-          </ul>
-          
-        </div>
-      ))}
-      
-    </div>
+                <AlertTriangle color={currentCity.aqi > 100 ? '#ef4444' : '#10b981'} size={28} />
+                <div>
+                  <h4 style={{ margin: 0, color: '#1e293b' }}>Note globale pour aujourd'hui</h4>
+                  <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
+                    {currentCity.aqi > 100
+                      ? "La qualité de l'air est dégradée. Suivez scrupuleusement les conseils ci-dessous."
+                      : "Les conditions sont globalement favorables, mais quelques précautions restent utiles."}
+                  </p>
+                </div>
+              </div>
 
-    {/* Pied de page prévention */}
-    <div style={{ 
-      marginTop: '30px', 
-      textAlign: 'center', 
-      padding: '20px', 
-      background: 'rgba(255,255,255,0.3)', 
-      borderRadius: '15px' 
-    }}>
-      <p style={{ fontSize: '0.85rem', color: '#64748b', fontStyle: 'italic' }}>
-        Source : Recommandations de l'Organisation Mondiale de la Santé (OMS) et des agences régionales de santé.
-      </p>
-    </div>
-  </div>
-)}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                gap: '20px'
+              }}>
+                {Object.entries(PREVENTION_TIPS).map(([key, category]) => (
+                  <div key={key} className="bento-card" style={{ padding: '25px', position: 'relative' }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      marginBottom: '20px',
+                      color: category.color
+                    }}>
+                      {category.icon}
+                      <h3 style={{ margin: 0, color: '#1e293b' }}>{category.title}</h3>
+                    </div>
+
+                    <ul style={{ padding: 0, listStyle: 'none' }}>
+                      {category.tips.map((tip, i) => (
+                        <li key={i} style={{
+                          display: 'flex',
+                          gap: '10px',
+                          marginBottom: '15px',
+                          fontSize: '0.95rem',
+                          color: '#475569',
+                          lineHeight: '1.4'
+                        }}>
+                          <div style={{
+                            minWidth: '6px',
+                            height: '6px',
+                            borderRadius: '50%',
+                            background: category.color,
+                            marginTop: '7px'
+                          }} />
+                          {tip}
+                        </li>
+                      ))}
+                    </ul>
+
+                  </div>
+                ))}
+
+              </div>
+
+              {/* Pied de page prévention */}
+              <div style={{
+                marginTop: '30px',
+                textAlign: 'center',
+                padding: '20px',
+                background: 'rgba(255,255,255,0.3)',
+                borderRadius: '15px'
+              }}>
+                <p style={{ fontSize: '0.85rem', color: '#64748b', fontStyle: 'italic' }}>
+                  Source : Recommandations de l'Organisation Mondiale de la Santé (OMS) et des agences régionales de santé.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
