@@ -124,12 +124,6 @@ const WORLD_DATA = {
   }
 };
 
-const HISTORY_DATA = [
-  { time: '08:00', aqi: 30 }, { time: '10:00', aqi: 45 },
-  { time: '12:00', aqi: 55 }, { time: '14:00', aqi: 80 },
-  { time: '16:00', aqi: 70 }, { time: '18:00', aqi: 40 },
-];
-
 function MapUpdater({ center, zoom }) {
   const map = useMap();
   map.setView(center, zoom);
@@ -148,8 +142,65 @@ function App() {
   const [compareCity1, setCompareCity1] = useState(WORLD_DATA['France'].cities[0]);
   const [compareCity2, setCompareCity2] = useState(WORLD_DATA['Chine'].cities[0]);
   const [showHealthModal, setShowHealthModal] = useState(false);
+  const [historyData, setHistoryData] = useState([]);
+  const [forecastData, setForecastData] = useState([]);
 
+  // --- FONCTION INTELLIGENTE DE RÉCUPÉRATION ---
+  const fetchPollutionData = async (lat, lon, cityName) => {
+    try {
+      // On demande : Actuel + Historique (7 jours) + Prévision (4 jours)
+      const meteoUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=pm2_5,nitrogen_dioxide,ozone,european_aqi&hourly=european_aqi&past_days=7&forecast_days=4`;
+      
+      const response = await fetch(meteoUrl);
+      const data = await response.json();
 
+      // 1. Mise à jour des données actuelles
+      let realPm25 = data.current?.pm2_5 || 0;
+      let realAqi = data.current?.european_aqi || Math.round(realPm25 * 3);
+      let newStatus = realAqi > 50 ? (realAqi > 100 ? 'Mauvais' : 'Modéré') : 'Bon';
+      if (realAqi > 150) newStatus = 'Dangereux';
+
+      setCurrentCity({
+        name: cityName,
+        lat: lat,
+        lng: lon,
+        aqi: realAqi,
+        pm25: realPm25,
+        no2: data.current?.nitrogen_dioxide || 0,
+        o3: data.current?.ozone || 0,
+        status: newStatus
+      });
+
+      // 2. Traitement de l'historique et des prévisions
+      const now = new Date();
+      const historyTmp = [];
+      const forecastTmp = [];
+
+      data.hourly.time.forEach((t, i) => {
+        const date = new Date(t);
+        const item = {
+          // Formatage de la date (ex: "Lun 14h")
+          time: date.toLocaleDateString('fr-FR', { weekday: 'short', hour: '2-digit' }), 
+          fullDate: date,
+          aqi: data.hourly.european_aqi[i]
+        };
+
+        if (date < now) {
+          historyTmp.push(item);
+        } else {
+          forecastTmp.push(item);
+        }
+      });
+
+      setHistoryData(historyTmp); // On stocke les 7 jours passés
+      setForecastData(forecastTmp); // On stocke les 4 jours futurs
+
+    } catch (error) {
+      console.error("Erreur récupération données", error);
+      alert("Impossible de récupérer les données complètes.");
+    }
+  };
+  
   const handleCompareSearch = async (e, citySlot) => {
   if (e.key === 'Enter' && e.target.value.trim() !== '') {
     const query = e.target.value;
@@ -201,39 +252,8 @@ function App() {
 
         if (geoData && geoData.length > 0) {
           const result = geoData[0];
-          const lat = result.lat;
-          const lon = result.lon;
-
-          const meteoUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=pm2_5,nitrogen_dioxide,ozone,european_aqi`;
-          const aqResponse = await fetch(meteoUrl);
-          const aqData = await aqResponse.json();
-
-          let realPm25 = 0, realNo2 = 0, realO3 = 0, realAqi = 0;
-
-          if (aqData.current) {
-            realPm25 = aqData.current.pm2_5 || 0;
-            realNo2 = aqData.current.nitrogen_dioxide || 0;
-            realO3 = aqData.current.ozone || 0;
-            realAqi = aqData.current.european_aqi || 0;
-          }
-
-          let displayAqi = realAqi > 0 ? realAqi : Math.round(realPm25 * 3);
-          let newStatus = 'Bon';
-          if (displayAqi > 50) newStatus = 'Modéré';
-          if (displayAqi > 80) newStatus = 'Mauvais';
-          if (displayAqi > 150) newStatus = 'Dangereux';
-
-          setCurrentCity({
-            name: result.display_name.split(',')[0],
-            lat: parseFloat(lat),
-            lng: parseFloat(lon),
-            aqi: displayAqi,
-            pm25: realPm25,
-            no2: realNo2,
-            o3: realO3,
-            status: newStatus
-          });
-          
+          // APPEL DE LA NOUVELLE FONCTION
+          await fetchPollutionData(result.lat, result.lon, result.display_name.split(',')[0]);
           setSearchText('');
         } else {
           alert("Ville introuvable ");
@@ -347,6 +367,9 @@ function App() {
             </button>
             <button className={`menu-btn ${activeTab === 'prevention' ? 'active' : ''}`} onClick={() => setActiveTab('prevention')}>
               <Leaf size={20} /> Prévention
+            </button>
+            <button className={`menu-btn ${activeTab === 'forecast' ? 'active' : ''}`} onClick={() => setActiveTab('forecast')}>
+              <Calendar size={20} /> Prévisions
             </button>
           </div>
 
@@ -468,9 +491,9 @@ function App() {
               </div>
 
               <div className="bento-card" style={{gridColumn: '1 / -1', height: '300px'}}>
-                  <h3 style={{marginBottom:'15px'}}>Historique (12h)</h3>
+                  <h3 style={{marginBottom:'15px'}}>Historique (7 Jours)</h3>
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={HISTORY_DATA}>
+                    <AreaChart data={historyData}>
                       <defs>
                         <linearGradient id="colorAqi" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#2563eb" stopOpacity={0.8}/>
@@ -480,6 +503,55 @@ function App() {
                       <XAxis dataKey="time" />
                       <Tooltip />
                       <Area type="monotone" dataKey="aqi" stroke="#2563eb" fillOpacity={1} fill="url(#colorAqi)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+              </div>
+            </div>
+          )}{}
+               {/* --- NOUVEL ONGLET : PRÉVISIONS --- */}
+          {activeTab === 'forecast' && (
+            <div className="fade-in-up">
+              <h2>Prévisions (4 Jours)</h2>
+              <p className="subtitle" style={{marginBottom: '30px'}}>Estimation de la qualité de l'air pour les prochains jours.</p>
+              
+              <div className="bento-grid" style={{gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))'}}>
+                {/* On regroupe par jour pour simplifier l'affichage (Midi de chaque jour) */}
+                {forecastData
+                  .filter(d => d.fullDate.getHours() === 12) // On prend midi comme référence
+                  .map((day, idx) => (
+                    <div key={idx} className="bento-card" style={{textAlign: 'center', padding: '20px'}}>
+                      <h3 style={{textTransform: 'capitalize', color: '#64748b'}}>{day.fullDate.toLocaleDateString('fr-FR', {weekday: 'long'})}</h3>
+                      <p style={{fontSize: '0.9rem', marginBottom: '15px'}}>{day.fullDate.toLocaleDateString()}</p>
+                      
+                      <div style={{
+                        width: '60px', height: '60px', borderRadius: '50%', margin: '0 auto 15px auto',
+                        background: day.aqi > 50 ? (day.aqi > 100 ? '#ef4444' : '#f59e0b') : '#10b981',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '1.2rem'
+                      }}>
+                        {day.aqi}
+                      </div>
+                      
+                      <p style={{fontWeight: 'bold', color: '#1e293b'}}>
+                        {day.aqi > 50 ? (day.aqi > 100 ? 'Mauvais' : 'Moyen') : 'Bon'}
+                      </p>
+                    </div>
+                ))}
+              </div>
+
+              {/* Graphique de tendance future */}
+              <div className="bento-card" style={{marginTop: '30px', height: '300px'}}>
+                  <h3>Tendance détaillée</h3>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={forecastData}>
+                      <defs>
+                        <linearGradient id="colorForecast" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#9333ea" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#9333ea" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="time" minTickGap={30} />
+                      <Tooltip />
+                      <Area type="monotone" dataKey="aqi" stroke="#9333ea" fill="url(#colorForecast)" />
                     </AreaChart>
                   </ResponsiveContainer>
               </div>
@@ -696,10 +768,11 @@ function App() {
               </li>
             ))}
           </ul>
+          
         </div>
       ))}
+      
     </div>
-
 
     {/* Pied de page prévention */}
     <div style={{ 
