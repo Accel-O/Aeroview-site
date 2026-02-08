@@ -165,7 +165,7 @@ function App() {
     });
     setCompareHistory(merged);
   };
-
+  // eslint-disable-next-line
   useEffect(() => { if (currentCity.lat && currentCity.lng) { fetchPollutionData(currentCity.lat, currentCity.lng, currentCity.name); } }, []);
 
   // HANDLERS
