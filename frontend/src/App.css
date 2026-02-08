@@ -1,28 +1,33 @@
-/* --- IMPORT POLICE --- */
+/* =========================================
+   1. FONTS & VARIABLES
+   ========================================= */
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&display=swap');
 
-/* --- VARIABLES & THÈME DYNAMIQUE --- */
 :root {
-  /* Dégradés atmosphériques */
-  --bg-good: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
-  --bg-moderate: linear-gradient(120deg, #fccb90 0%, #d57eeb 100%);
-  --bg-bad: linear-gradient(120deg, #f093fb 0%, #f5576c 100%);
-  --bg-hazardous: linear-gradient(120deg, #434343 0%, #000000 100%);
-
-  /* Fonds plus opaques pour la lisibilité */
-  --glass-panel: rgba(255, 255, 255, 0.90);
+  --bg-gradient: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+  --glass-panel: rgba(255, 255, 255, 0.85);
   --glass-border: rgba(255, 255, 255, 0.8);
   --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-
-  /* Textes plus sombres et contrastés */
   --text-primary: #0f172a;
-  /* Noir bleuté très profond */
   --text-secondary: #334155;
-  /* Gris foncé */
   --text-muted: #64748b;
-  /* Pour les infos moins importantes */
-
+  --card-bg: rgba(255, 255, 255, 0.9);
+  --sidebar-bg: rgba(255, 255, 255, 0.5);
+  --input-bg: rgba(255, 255, 255, 0.5);
   --radius: 24px;
+}
+
+body.dark-mode {
+  --bg-gradient: linear-gradient(120deg, #0f172a 0%, #1e293b 100%);
+  --glass-panel: rgba(15, 23, 42, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --card-bg: rgba(30, 41, 59, 0.8);
+  --sidebar-bg: rgba(15, 23, 42, 0.5);
+  --input-bg: rgba(255, 255, 255, 0.1);
 }
 
 * {
@@ -36,21 +41,24 @@ body,
 html {
   height: 100%;
   overflow-x: hidden;
+  color: var(--text-primary);
 }
 
-/* --- CONTAINER PRINCIPAL ANIMÉ --- */
+/* =========================================
+   2. LAYOUT BUREAU
+   ========================================= */
 .app-wrapper {
   min-height: 100vh;
-  transition: background 1.5s ease-in-out;
+  background: var(--bg-gradient);
   padding: 20px;
   display: flex;
   justify-content: center;
   align-items: center;
+  transition: background 0.5s ease;
 }
 
-/* Le cadre principal en verre */
 .glass-dashboard {
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--glass-panel);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
@@ -64,42 +72,51 @@ html {
   overflow: hidden;
 }
 
-/* --- SIDEBAR --- */
+/* SIDEBAR */
 .sidebar {
   padding: 30px;
   border-right: 1px solid rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
-  gap: 40px;
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--sidebar-bg);
+  z-index: 10;
+  height: 100%;
+}
+
+.sidebar .scrollable-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 5px;
+  margin: 20px 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-muted) transparent;
 }
 
 .brand {
   font-size: 1.8rem;
   font-weight: 900;
-  color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: 10px;
-  letter-spacing: -0.5px;
+  flex-shrink: 0;
 }
 
 .menu {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 10px;
 }
 
 .menu-btn {
   background: transparent;
   border: none;
-  padding: 15px 20px;
+  padding: 12px 15px;
   text-align: left;
   font-size: 1rem;
   font-weight: 700;
   color: var(--text-secondary);
   cursor: pointer;
-  border-radius: 16px;
+  border-radius: 14px;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
@@ -113,11 +130,11 @@ html {
 
 .menu-btn.active {
   background: var(--text-primary);
-  color: white;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  color: var(--glass-panel);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
-/* --- CONTENU PRINCIPAL --- */
+/* CONTENU */
 .main-content {
   padding: 40px;
   overflow-y: auto;
@@ -140,7 +157,7 @@ html {
   }
 }
 
-/* --- SECTIONS DASHBOARD --- */
+/* HEADER & GRIDS */
 .header-section {
   display: flex;
   justify-content: space-between;
@@ -151,10 +168,8 @@ html {
 .big-title {
   font-size: 3.5rem;
   font-weight: 900;
-  color: var(--text-primary);
   line-height: 1;
   margin-bottom: 10px;
-  text-shadow: 0 2px 10px rgba(255, 255, 255, 0.5);
 }
 
 .subtitle {
@@ -163,20 +178,6 @@ html {
   color: var(--text-secondary);
 }
 
-/* Selecteurs Stylisés */
-.country-selector select {
-  padding: 12px 24px;
-  border-radius: 50px;
-  border: 2px solid rgba(0, 0, 0, 0.1);
-  background: white;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  cursor: pointer;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-}
-
-/* Grille Bento */
 .bento-grid {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
@@ -185,30 +186,22 @@ html {
 }
 
 .bento-card {
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--card-bg);
   border-radius: 24px;
   padding: 25px;
   box-shadow: 0 4px 25px rgba(0, 0, 0, 0.05);
-  border: 1px solid white;
+  border: 1px solid var(--glass-border);
   transition: transform 0.3s ease;
-  color: var(--text-primary);
 }
 
 .bento-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 
 .bento-card h3 {
   font-size: 1.1rem;
   font-weight: 800;
   margin-bottom: 10px;
-  color: var(--text-primary);
-}
-
-.bento-card p {
-  color: var(--text-secondary);
-  font-weight: 500;
 }
 
 .bento-card.map-container {
@@ -218,24 +211,20 @@ html {
   overflow: hidden;
   height: 500px;
   position: relative;
-  background: white;
 }
 
-/* --- LA CARTE --- */
 .leaflet-container {
   width: 100%;
   height: 100%;
   z-index: 1;
 }
 
-/* --- SCORE AQI --- */
 .score-card {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
-  background: white !important;
 }
 
 .score-circle {
@@ -251,34 +240,9 @@ html {
   margin-bottom: 15px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   position: relative;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Pulse Animation */
-.score-circle::after {
-  content: '';
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  border: 3px solid currentColor;
-  animation: pulse 2s infinite;
-  opacity: 0.5;
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-    opacity: 0.5;
-  }
-
-  100% {
-    transform: scale(1.4);
-    opacity: 0;
-  }
-}
-
-/* --- MODALE SANTÉ --- */
+/* MODALE */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -286,168 +250,153 @@ html {
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
-  z-index: 1000;
+  backdrop-filter: blur(5px);
+  z-index: 2000;
   display: flex;
   justify-content: center;
   align-items: center;
-  animation: fadeIn 0.3s ease;
 }
 
 .modal-content {
-  background: white;
+  background: var(--card-bg);
   width: 600px;
   max-width: 90%;
   border-radius: 24px;
   padding: 40px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   position: relative;
-  animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  color: var(--text-primary);
 }
 
 .close-modal {
   position: absolute;
   top: 20px;
   right: 20px;
-  background: #f1f5f9;
+  background: var(--input-bg);
   border: none;
   width: 40px;
   height: 40px;
   border-radius: 50%;
   cursor: pointer;
-  font-weight: bold;
   color: var(--text-primary);
-  transition: background 0.2s;
 }
 
-.close-modal:hover {
-  background: #e2e8f0;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes scaleUp {
-  from {
-    transform: scale(0.8);
-  }
-
-  to {
-    transform: scale(1);
-  }
-}
-
-/* --- COMPARATEUR --- */
-.comparator-wrapper {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30px;
-  margin-top: 30px;
-}
-
-.city-compare-card {
-  background: white;
-  padding: 30px;
-  border-radius: 24px;
-  text-align: center;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e2e8f0;
-}
-
-/* --- INDICATEURS DÉTAILS --- */
-.bento-card span {
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.bento-card strong {
-  color: var(--text-primary);
-  font-size: 1.4rem;
-  font-weight: 800;
-}
-
-/* ==========================================================================
-   VERSION MOBILE (MODE APPLICATION) - AJOUTÉ A LA FIN
-   ========================================================================== */
+/* =========================================
+   3. RESPONSIVE MOBILE (CORRECTIF BARRE DE RECHERCHE)
+   ========================================= */
 @media (max-width: 768px) {
 
-  /* 1. CONTAINER PRINCIPAL : Plein écran */
   .app-wrapper {
     padding: 0;
     align-items: flex-start;
-    background: var(--bg-good);
   }
 
-  /* 2. CADRE EN VERRE : Devient l'écran */
   .glass-dashboard {
-    max-width: 100%;
     height: 100vh;
     border-radius: 0;
     border: none;
     display: flex;
     flex-direction: column;
+  }
+
+  /* HEADER MOBILE : RECHERCHE LARGE ET ALIGNÉE */
+  .header-section {
+    flex-direction: column;
+    /* Empile verticalement */
+    align-items: stretch;
+    /* Force la largeur max */
+    gap: 15px;
+    width: 100%;
+  }
+
+  /* Force le conteneur de la recherche à prendre toute la largeur */
+  .header-section>div:first-child {
+    width: 100%;
+  }
+
+  /* Force l'input de recherche spécifique à prendre 100% (écrase le style inline 300px) */
+  div[style*="max-width: 300px"] {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .big-title {
+    font-size: 2.5rem;
+    text-align: left;
+  }
+
+  .aqi-badge {
+    align-self: flex-start;
+  }
+
+  /* BARRE DE NAVIGATION FIXE EN BAS */
+  .sidebar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 70px !important;
+    background: var(--card-bg);
+    border-top: 1px solid var(--glass-border);
+    padding: 0;
+    margin: 0;
+    z-index: 9999;
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .sidebar>.brand,
+  .sidebar>div:last-child {
+    display: none !important;
+  }
+
+  .sidebar .scrollable-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     overflow: hidden;
   }
 
-  /* 3. NAVIGATION (SIDEBAR) : Devient la Bottom Bar */
-  .sidebar {
-    order: 2;
-    /* Passe en bas */
-    position: relative;
+  .sidebar .scrollable-content>div:not(.menu) {
+    display: none !important;
+  }
+
+  .menu {
+    flex-direction: row !important;
     width: 100%;
-    height: auto;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 15px;
-    background: white;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
-    border-right: none;
-    box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.05);
-    z-index: 100;
-    gap: 0;
-  }
-
-  .sidebar .brand {
-    display: none;
-  }
-
-  .sidebar label {
-    display: none;
-  }
-
-  .sidebar .menu {
-    flex-direction: row;
-    width: 100%;
+    height: 100%;
     justify-content: space-around;
     gap: 0;
   }
 
   .menu-btn {
     flex-direction: column;
-    padding: 8px;
-    font-size: 0.7rem;
-    gap: 5px;
-    border-radius: 12px;
+    padding: 10px;
+    font-size: 0;
+    gap: 0;
+    border-radius: 50%;
     background: transparent !important;
     color: var(--text-muted);
-    font-weight: 600;
+    width: auto;
+    height: auto;
   }
 
   .menu-btn.active {
     color: #2563eb;
-    box-shadow: none;
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+  }
+
+  .menu-btn.active::after {
+    content: '';
+    display: block;
+    width: 4px;
+    height: 4px;
+    background: #2563eb;
+    border-radius: 50%;
+    margin-top: 4px;
   }
 
   .menu-btn svg {
@@ -455,83 +404,26 @@ html {
     height: 24px;
   }
 
-  .sidebar .country-selector {
-    display: none;
-  }
-
-  /* 4. CONTENU PRINCIPAL : Scrollable */
+  /* CONTENU PRINCIPAL */
   .main-content {
-    order: 1;
     flex: 1;
-    padding: 20px;
-    padding-bottom: 80px;
-    /* Espace pour la barre du bas */
+    padding: 15px;
+    padding-bottom: 90px;
     overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
   }
 
-  /* 5. HEADER COMPACT */
-  .header-section {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
-  }
-
-  .header-section>div {
-    width: 100%;
-  }
-
-  /* Le style inline du composant JS prend parfois le dessus, 
-     on force la largeur 100% via CSS si besoin */
-  div[style*="max-width: 300px"] {
-    max-width: 100% !important;
-    width: 100%;
-  }
-
-  .big-title {
-    font-size: 2.5rem;
-  }
-
-  .aqi-badge {
-    align-self: flex-start;
-    font-size: 0.9rem;
-    padding: 8px 15px;
-  }
-
-  /* 6. GRILLE BENTO : Une seule colonne */
+  /* GRILLES */
   .bento-grid {
     grid-template-columns: 1fr;
-    grid-template-rows: auto;
   }
 
+  .pollutant-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Force 1 colonne polluants mobile */
   .bento-card.map-container {
     height: 250px;
-    grid-column: 1;
-  }
-
-  .bento-card {
-    padding: 20px;
-  }
-
-  .score-circle {
-    width: 100px;
-    height: 100px;
-    font-size: 2.5rem;
-  }
-
-  /* 7. COMPARATEUR RESPONSIVE */
-  .comparator-wrapper {
-    grid-template-columns: 1fr;
-  }
-
-  /* Cible les conteneurs flex du comparateur pour les empiler */
-  div[style*="justify-content: center"][style*="flex-wrap: wrap"] {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  div[style*="min-width: 250px"] {
-    width: 100%;
-    min-width: 0 !important;
+    grid-column: auto;
   }
 }
