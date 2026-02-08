@@ -1,7 +1,6 @@
 {
-<<<<<<< HEAD
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "AeroView",
+  "name": "AeroView - Qualité de l'Air",
   "icons": [
     {
       "src": "favicon.ico",
@@ -19,11 +18,6 @@
       "sizes": "512x512"
     }
   ],
-=======
-  "short_name": "AeroView ",
-  "name": "Creation d'une application de suivie de l'air",
-  
->>>>>>> 4f00812 (Ajout de la documention sur les polluants)
   "start_url": ".",
   "display": "standalone",
   "theme_color": "#000000",

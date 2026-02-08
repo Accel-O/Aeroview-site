@@ -3,22 +3,25 @@
 
 /* --- VARIABLES & THÈME DYNAMIQUE --- */
 :root {
-  /* Dégradés atmosphériques (inchangés) */
+  /* Dégradés atmosphériques */
   --bg-good: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
   --bg-moderate: linear-gradient(120deg, #fccb90 0%, #d57eeb 100%);
   --bg-bad: linear-gradient(120deg, #f093fb 0%, #f5576c 100%);
   --bg-hazardous: linear-gradient(120deg, #434343 0%, #000000 100%);
 
-  /* MODIFICATION : Fonds plus opaques pour la lisibilité */
-  --glass-panel: rgba(255, 255, 255, 0.90); /* Passé de 0.75 à 0.90 */
+  /* Fonds plus opaques pour la lisibilité */
+  --glass-panel: rgba(255, 255, 255, 0.90);
   --glass-border: rgba(255, 255, 255, 0.8);
   --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-  
-  /* MODIFICATION : Textes plus sombres et contrastés */
-  --text-primary: #0f172a;   /* Noir bleuté très profond */
-  --text-secondary: #334155; /* Gris foncé (au lieu de gris moyen) */
-  --text-muted: #64748b;     /* Pour les infos moins importantes */
-  
+
+  /* Textes plus sombres et contrastés */
+  --text-primary: #0f172a;
+  /* Noir bleuté très profond */
+  --text-secondary: #334155;
+  /* Gris foncé */
+  --text-muted: #64748b;
+  /* Pour les infos moins importantes */
+
   --radius: 24px;
 }
 
@@ -29,7 +32,8 @@
   font-family: 'Outfit', sans-serif;
 }
 
-body, html {
+body,
+html {
   height: 100%;
   overflow-x: hidden;
 }
@@ -46,7 +50,7 @@ body, html {
 
 /* Le cadre principal en verre */
 .glass-dashboard {
-  background: rgba(255, 255, 255, 0.85); /* Plus opaque */
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
@@ -63,7 +67,7 @@ body, html {
 /* --- SIDEBAR --- */
 .sidebar {
   padding: 30px;
-  border-right: 1px solid rgba(0, 0, 0, 0.05); /* Bordure plus subtile */
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
   gap: 40px;
@@ -72,7 +76,7 @@ body, html {
 
 .brand {
   font-size: 1.8rem;
-  font-weight: 900; /* Plus gras */
+  font-weight: 900;
   color: var(--text-primary);
   display: flex;
   align-items: center;
@@ -92,8 +96,8 @@ body, html {
   padding: 15px 20px;
   text-align: left;
   font-size: 1rem;
-  font-weight: 700; /* Texte menu plus gras */
-  color: var(--text-secondary); /* Couleur plus foncée */
+  font-weight: 700;
+  color: var(--text-secondary);
   cursor: pointer;
   border-radius: 16px;
   transition: all 0.2s ease;
@@ -110,7 +114,7 @@ body, html {
 .menu-btn.active {
   background: var(--text-primary);
   color: white;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
 /* --- CONTENU PRINCIPAL --- */
@@ -125,8 +129,15 @@ body, html {
 }
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* --- SECTIONS DASHBOARD --- */
@@ -140,29 +151,29 @@ body, html {
 .big-title {
   font-size: 3.5rem;
   font-weight: 900;
-  color: var(--text-primary); /* Noir profond */
+  color: var(--text-primary);
   line-height: 1;
   margin-bottom: 10px;
-  text-shadow: 0 2px 10px rgba(255,255,255,0.5); /* Légère ombre pour détacher du fond */
+  text-shadow: 0 2px 10px rgba(255, 255, 255, 0.5);
 }
 
 .subtitle {
   font-size: 1.2rem;
   font-weight: 500;
-  color: var(--text-secondary); /* Plus foncé */
+  color: var(--text-secondary);
 }
 
 /* Selecteurs Stylisés */
 .country-selector select {
   padding: 12px 24px;
   border-radius: 50px;
-  border: 2px solid rgba(0,0,0,0.1); /* Bordure plus visible */
+  border: 2px solid rgba(0, 0, 0, 0.1);
   background: white;
   font-size: 1rem;
   font-weight: 700;
   color: var(--text-primary);
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
 /* Grille Bento */
@@ -174,10 +185,10 @@ body, html {
 }
 
 .bento-card {
-  background: rgba(255, 255, 255, 0.9); /* Fond presque opaque pour la lecture */
+  background: rgba(255, 255, 255, 0.9);
   border-radius: 24px;
   padding: 25px;
-  box-shadow: 0 4px 25px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.05);
   border: 1px solid white;
   transition: transform 0.3s ease;
   color: var(--text-primary);
@@ -185,7 +196,7 @@ body, html {
 
 .bento-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 
 .bento-card h3 {
@@ -207,7 +218,7 @@ body, html {
   overflow: hidden;
   height: 500px;
   position: relative;
-  background: white; /* Carte sur fond blanc pur */
+  background: white;
 }
 
 /* --- LA CARTE --- */
@@ -234,13 +245,13 @@ body, html {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 3.5rem; /* Plus gros */
+  font-size: 3.5rem;
   font-weight: 900;
   color: white;
   margin-bottom: 15px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   position: relative;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.2); /* Ombre portée sur le texte blanc */
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Pulse Animation */
@@ -250,21 +261,31 @@ body, html {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  border: 3px solid currentColor; /* Bordure plus épaisse */
+  border: 3px solid currentColor;
   animation: pulse 2s infinite;
   opacity: 0.5;
 }
 
 @keyframes pulse {
-  0% { transform: scale(1); opacity: 0.5; }
-  100% { transform: scale(1.4); opacity: 0; }
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
 }
 
 /* --- MODALE SANTÉ --- */
 .modal-overlay {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.7); /* Fond plus sombre */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(8px);
   z-index: 1000;
   display: flex;
@@ -286,20 +307,42 @@ body, html {
 
 .close-modal {
   position: absolute;
-  top: 20px; right: 20px;
+  top: 20px;
+  right: 20px;
   background: #f1f5f9;
   border: none;
-  width: 40px; height: 40px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   cursor: pointer;
   font-weight: bold;
   color: var(--text-primary);
   transition: background 0.2s;
 }
-.close-modal:hover { background: #e2e8f0; }
 
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes scaleUp { from { transform: scale(0.8); } to { transform: scale(1); } }
+.close-modal:hover {
+  background: #e2e8f0;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleUp {
+  from {
+    transform: scale(0.8);
+  }
+
+  to {
+    transform: scale(1);
+  }
+}
 
 /* --- COMPARATEUR --- */
 .comparator-wrapper {
@@ -319,26 +362,176 @@ body, html {
 }
 
 /* --- INDICATEURS DÉTAILS --- */
-/* On force le contraste ici spécifiquement */
 .bento-card span {
-    color: var(--text-muted);
-    font-weight: 600;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .bento-card strong {
-    color: var(--text-primary);
-    font-size: 1.4rem;
-    font-weight: 800;
+  color: var(--text-primary);
+  font-size: 1.4rem;
+  font-weight: 800;
 }
 
-/* --- RESPONSIVE --- */
-@media (max-width: 1024px) {
-  .glass-dashboard { grid-template-columns: 1fr; height: auto; min-height: 100vh; }
-  .sidebar { flex-direction: row; justify-content: space-between; align-items: center; border-right: none; border-bottom: 1px solid rgba(0,0,0,0.1); }
-  .menu { flex-direction: row; overflow-x: auto; }
-  .bento-grid { grid-template-columns: 1fr; }
-  .bento-card.map-container { grid-column: 1; grid-row: auto; height: 300px; }
+/* ==========================================================================
+   VERSION MOBILE (MODE APPLICATION) - AJOUTÉ A LA FIN
+   ========================================================================== */
+@media (max-width: 768px) {
+
+  /* 1. CONTAINER PRINCIPAL : Plein écran */
+  .app-wrapper {
+    padding: 0;
+    align-items: flex-start;
+    background: var(--bg-good);
+  }
+
+  /* 2. CADRE EN VERRE : Devient l'écran */
+  .glass-dashboard {
+    max-width: 100%;
+    height: 100vh;
+    border-radius: 0;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* 3. NAVIGATION (SIDEBAR) : Devient la Bottom Bar */
+  .sidebar {
+    order: 2;
+    /* Passe en bas */
+    position: relative;
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: white;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    border-right: none;
+    box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.05);
+    z-index: 100;
+    gap: 0;
+  }
+
+  .sidebar .brand {
+    display: none;
+  }
+
+  .sidebar label {
+    display: none;
+  }
+
+  .sidebar .menu {
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-around;
+    gap: 0;
+  }
+
+  .menu-btn {
+    flex-direction: column;
+    padding: 8px;
+    font-size: 0.7rem;
+    gap: 5px;
+    border-radius: 12px;
+    background: transparent !important;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .menu-btn.active {
+    color: #2563eb;
+    box-shadow: none;
+    transform: translateY(-2px);
+  }
+
+  .menu-btn svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .sidebar .country-selector {
+    display: none;
+  }
+
+  /* 4. CONTENU PRINCIPAL : Scrollable */
+  .main-content {
+    order: 1;
+    flex: 1;
+    padding: 20px;
+    padding-bottom: 80px;
+    /* Espace pour la barre du bas */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 5. HEADER COMPACT */
+  .header-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .header-section>div {
+    width: 100%;
+  }
+
+  /* Le style inline du composant JS prend parfois le dessus, 
+     on force la largeur 100% via CSS si besoin */
+  div[style*="max-width: 300px"] {
+    max-width: 100% !important;
+    width: 100%;
+  }
+
+  .big-title {
+    font-size: 2.5rem;
+  }
+
+  .aqi-badge {
+    align-self: flex-start;
+    font-size: 0.9rem;
+    padding: 8px 15px;
+  }
+
+  /* 6. GRILLE BENTO : Une seule colonne */
+  .bento-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+
+  .bento-card.map-container {
+    height: 250px;
+    grid-column: 1;
+  }
+
+  .bento-card {
+    padding: 20px;
+  }
+
+  .score-circle {
+    width: 100px;
+    height: 100px;
+    font-size: 2.5rem;
+  }
+
+  /* 7. COMPARATEUR RESPONSIVE */
+  .comparator-wrapper {
+    grid-template-columns: 1fr;
+  }
+
+  /* Cible les conteneurs flex du comparateur pour les empiler */
+  div[style*="justify-content: center"][style*="flex-wrap: wrap"] {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  div[style*="min-width: 250px"] {
+    width: 100%;
+    min-width: 0 !important;
+  }
 }
