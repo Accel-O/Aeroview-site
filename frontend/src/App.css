@@ -4,30 +4,60 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&display=swap');
 
 :root {
-  --bg-gradient: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+  /* Scrollbar Colors */
+  --scrollbar-track: rgba(255, 255, 255, 0.3);
+  --scrollbar-thumb: rgba(0, 0, 0, 0.2);
+
+  /* Glassmorphism */
   --glass-panel: rgba(255, 255, 255, 0.85);
   --glass-border: rgba(255, 255, 255, 0.8);
   --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+
   --text-primary: #0f172a;
   --text-secondary: #334155;
   --text-muted: #64748b;
+
   --card-bg: rgba(255, 255, 255, 0.9);
   --sidebar-bg: rgba(255, 255, 255, 0.5);
   --input-bg: rgba(255, 255, 255, 0.5);
+
   --radius: 24px;
 }
 
 body.dark-mode {
-  --bg-gradient: linear-gradient(120deg, #0f172a 0%, #1e293b 100%);
+  --scrollbar-track: rgba(0, 0, 0, 0.3);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.2);
   --glass-panel: rgba(15, 23, 42, 0.85);
   --glass-border: rgba(255, 255, 255, 0.1);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
+
   --card-bg: rgba(30, 41, 59, 0.8);
   --sidebar-bg: rgba(15, 23, 42, 0.5);
   --input-bg: rgba(255, 255, 255, 0.1);
+}
+
+/* --- SCROLLBAR PERSONNALISÉE --- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.4);
 }
 
 * {
@@ -44,19 +74,65 @@ html {
   color: var(--text-primary);
 }
 
-/* =========================================
-   2. LAYOUT BUREAU
-   ========================================= */
+/* --- BACKGROUNDS DYNAMIQUES (AQI) --- */
 .app-wrapper {
   min-height: 100vh;
-  background: var(--bg-gradient);
   padding: 20px;
   display: flex;
   justify-content: center;
   align-items: center;
-  transition: background 0.5s ease;
+  transition: background 1s ease;
 }
 
+/* 0-50: Vert */
+.aqi-good {
+  background: linear-gradient(120deg, #dcfce7 0%, #22c55e 100%);
+}
+
+body.dark-mode .aqi-good {
+  background: linear-gradient(120deg, #064e3b 0%, #14532d 100%);
+}
+
+/* 51-100: Orange */
+.aqi-moderate {
+  background: linear-gradient(120deg, #ffedd5 0%, #f97316 100%);
+}
+
+body.dark-mode .aqi-moderate {
+  background: linear-gradient(120deg, #7c2d12 0%, #ea580c 100%);
+}
+
+/* 101-150: Rouge */
+.aqi-bad {
+  background: linear-gradient(120deg, #fee2e2 0%, #ef4444 100%);
+}
+
+body.dark-mode .aqi-bad {
+  background: linear-gradient(120deg, #7f1d1d 0%, #b91c1c 100%);
+}
+
+/* 151-200: Violet */
+.aqi-very-bad {
+  background: linear-gradient(120deg, #f3e8ff 0%, #a855f7 100%);
+}
+
+body.dark-mode .aqi-very-bad {
+  background: linear-gradient(120deg, #581c87 0%, #7e22ce 100%);
+}
+
+/* 201+: Marron */
+.aqi-hazardous {
+  background: linear-gradient(120deg, #fef3c7 0%, #78350f 100%);
+}
+
+body.dark-mode .aqi-hazardous {
+  background: linear-gradient(120deg, #451a03 0%, #92400e 100%);
+}
+
+
+/* =========================================
+   2. LAYOUT BUREAU (LE CADRE EN VERRE)
+   ========================================= */
 .glass-dashboard {
   background: var(--glass-panel);
   backdrop-filter: blur(20px);
@@ -72,7 +148,7 @@ html {
   overflow: hidden;
 }
 
-/* SIDEBAR */
+/* --- SIDEBAR --- */
 .sidebar {
   padding: 30px;
   border-right: 1px solid rgba(0, 0, 0, 0.05);
@@ -88,8 +164,6 @@ html {
   overflow-y: auto;
   padding-right: 5px;
   margin: 20px 0;
-  scrollbar-width: thin;
-  scrollbar-color: var(--text-muted) transparent;
 }
 
 .brand {
@@ -134,7 +208,7 @@ html {
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
-/* CONTENU */
+/* --- CONTENU & FIX OVERFLOW --- */
 .main-content {
   padding: 40px;
   overflow-y: auto;
@@ -157,25 +231,18 @@ html {
   }
 }
 
-/* HEADER & GRIDS */
-.header-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 30px;
-}
-
-.big-title {
-  font-size: 3.5rem;
-  font-weight: 900;
-  line-height: 1;
-  margin-bottom: 10px;
-}
-
-.subtitle {
-  font-size: 1.2rem;
-  font-weight: 500;
-  color: var(--text-secondary);
+/* Fix: Empêche les éléments de sortir de leur carte */
+.bento-card {
+  background: var(--card-bg);
+  border-radius: 24px;
+  padding: 25px;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--glass-border);
+  transition: transform 0.3s ease;
+  overflow: hidden;
+  /* COUPE CE QUI DÉPASSE */
+  min-width: 0;
+  /* Important pour les grids */
 }
 
 .bento-grid {
@@ -185,23 +252,24 @@ html {
   gap: 20px;
 }
 
-.bento-card {
-  background: var(--card-bg);
-  border-radius: 24px;
-  padding: 25px;
-  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.05);
-  border: 1px solid var(--glass-border);
-  transition: transform 0.3s ease;
-}
-
 .bento-card:hover {
   transform: translateY(-2px);
 }
 
-.bento-card h3 {
-  font-size: 1.1rem;
-  font-weight: 800;
-  margin-bottom: 10px;
+/* Fix Tables & Graphs */
+.recharts-responsive-container {
+  min-width: 0;
+}
+
+table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+td,
+th {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .bento-card.map-container {
@@ -242,7 +310,29 @@ html {
   position: relative;
 }
 
-/* MODALE */
+/* Header */
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 30px;
+}
+
+.big-title {
+  font-size: 3.5rem;
+  font-weight: 900;
+  line-height: 1;
+  margin-bottom: 10px;
+  margin-top: 20px;
+}
+
+.subtitle {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* Modale */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -280,8 +370,36 @@ html {
   color: var(--text-primary);
 }
 
+/* Loader Animation pour la recherche */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin-animation {
+  animation: spin 1s linear infinite;
+}
+
 /* =========================================
-   3. RESPONSIVE MOBILE (CORRECTIF BARRE DE RECHERCHE)
+   3. GESTION DES ÉLÉMENTS MOBILES/DESKTOP
+   ========================================= */
+
+/* Par défaut (PC), on cache les trucs mobiles */
+.mobile-only-btn {
+  display: none !important;
+}
+
+.mobile-menu-overlay {
+  display: none;
+}
+
+/* =========================================
+   4. RESPONSIVE MOBILE (< 768px)
    ========================================= */
 @media (max-width: 768px) {
 
@@ -298,37 +416,7 @@ html {
     flex-direction: column;
   }
 
-  /* HEADER MOBILE : RECHERCHE LARGE ET ALIGNÉE */
-  .header-section {
-    flex-direction: column;
-    /* Empile verticalement */
-    align-items: stretch;
-    /* Force la largeur max */
-    gap: 15px;
-    width: 100%;
-  }
-
-  /* Force le conteneur de la recherche à prendre toute la largeur */
-  .header-section>div:first-child {
-    width: 100%;
-  }
-
-  /* Force l'input de recherche spécifique à prendre 100% (écrase le style inline 300px) */
-  div[style*="max-width: 300px"] {
-    max-width: 100% !important;
-    width: 100% !important;
-  }
-
-  .big-title {
-    font-size: 2.5rem;
-    text-align: left;
-  }
-
-  .aqi-badge {
-    align-self: flex-start;
-  }
-
-  /* BARRE DE NAVIGATION FIXE EN BAS */
+  /* --- SIDEBAR (Barre du bas) --- */
   .sidebar {
     position: fixed;
     bottom: 0;
@@ -344,11 +432,20 @@ html {
     justify-content: center;
   }
 
-  .sidebar>.brand,
-  .sidebar>div:last-child {
+  /* On cache le Logo, le Footer, et le contenu Desktop dans la barre du bas */
+  .brand {
     display: none !important;
   }
 
+  .desktop-footer {
+    display: none !important;
+  }
+
+  .desktop-only-content {
+    display: none !important;
+  }
+
+  /* Reset du conteneur scrollable pour qu'il prenne toute la largeur */
   .sidebar .scrollable-content {
     margin: 0 !important;
     padding: 0 !important;
@@ -360,10 +457,7 @@ html {
     overflow: hidden;
   }
 
-  .sidebar .scrollable-content>div:not(.menu) {
-    display: none !important;
-  }
-
+  /* Menu horizontal */
   .menu {
     flex-direction: row !important;
     width: 100%;
@@ -372,6 +466,7 @@ html {
     gap: 0;
   }
 
+  /* Boutons du menu : Icônes seules */
   .menu-btn {
     flex-direction: column;
     padding: 10px;
@@ -404,7 +499,14 @@ html {
     height: 24px;
   }
 
-  /* CONTENU PRINCIPAL */
+  /* Affiche le bouton Menu Hamburger */
+  .mobile-only-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* --- CONTENU --- */
   .main-content {
     flex: 1;
     padding: 15px;
@@ -412,7 +514,24 @@ html {
     overflow-y: auto;
   }
 
-  /* GRILLES */
+  /* Header Mobile */
+  .header-section {
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+  }
+
+  .header-section>div:first-child {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .big-title {
+    font-size: 2.5rem;
+    text-align: left;
+  }
+
+  /* Grilles 1 colonne */
   .bento-grid {
     grid-template-columns: 1fr;
   }
@@ -421,9 +540,47 @@ html {
     grid-template-columns: 1fr !important;
   }
 
-  /* Force 1 colonne polluants mobile */
   .bento-card.map-container {
     height: 250px;
     grid-column: auto;
+  }
+
+  /* --- OVERLAY MENU MOBILE (Le menu qui s'ouvre) --- */
+  /* --- OVERLAY MENU MOBILE (Le menu qui s'ouvre) --- */
+  .mobile-menu-overlay {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+    /* MODIFICATION ICI : Fond "Compact" (Verre opaque) au lieu du gradient */
+    background: var(--glass-panel);
+    backdrop-filter: blur(50px);
+    /* Gros flou pour cacher le fond */
+    -webkit-backdrop-filter: blur(50px);
+
+    z-index: 10000;
+    padding: 20px;
+    padding-bottom: 90px;
+    overflow-y: auto;
+  }
+
+  .mobile-menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+  }
+
+  .mobile-menu-header h3 {
+    font-size: 1.8rem;
+    font-weight: 900;
+  }
+
+  .mobile-menu-content {
+    animation: fadeInUp 0.4s ease-out;
   }
 }
