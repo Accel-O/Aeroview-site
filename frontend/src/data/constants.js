@@ -85,9 +85,9 @@ export const WORLD_DATA = {
         center: [46.603354, 1.888334],
         zoom: 6,
         cities: [
-            { name: 'Paris', lat: 48.8566, lng: 2.3522, aqi: 42, pm25: 12, no2: 25, o3: 30, status: 'Bon' },
-            { name: 'Lyon', lat: 45.7640, lng: 4.8357, aqi: 85, pm25: 35, no2: 40, o3: 45, status: 'Modéré' },
-            { name: 'Marseille', lat: 43.2965, lng: 5.3698, aqi: 110, pm25: 55, no2: 50, o3: 60, status: 'Mauvais' }
+            { name: 'Paris', lat: 48.8566, lng: 2.3522, aqi: 42, pm25: 12, pm10: 33, no2: 25, o3: 30, status: 'Bon' },
+            { name: 'Lyon', lat: 45.7640, lng: 4.8357, aqi: 85, pm25: 35, pm10: 15, no2: 40, o3: 45, status: 'Modéré' },
+            { name: 'Marseille', lat: 43.2965, lng: 5.3698, aqi: 110, pm25: 55, pm10: 19, no2: 50, o3: 60, status: 'Mauvais' }
         ]
     },
     Chine: {
