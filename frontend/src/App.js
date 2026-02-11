@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import './App.css';
 
 // --- IMPORTS COMPOSANTS ---
@@ -179,6 +180,7 @@ function App() {
 
   return (
     <div className="app-wrapper">
+      <Analytics />
       <HealthModal showHealthModal={showHealthModal} setShowHealthModal={setShowHealthModal} currentCity={currentCity} />
       <div className="glass-dashboard">
         <Sidebar
