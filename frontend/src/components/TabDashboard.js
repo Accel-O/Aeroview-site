@@ -20,13 +20,12 @@ const TabDashboard = ({ currentCity, historyData, setShowHealthModal, onMapClick
                 <p style={{ color: 'var(--text-muted)' }}>Standard US AQI</p>
             </div>
 
-            {/* Détails polluants (AVEC PM10) */}
+            {/* Détails polluants */}
             <div className="bento-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-around' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--glass-border)', paddingBottom: '10px' }}>
                     <span>PM2.5</span><strong>{currentCity.pm25} µg/m³</strong>
                 </div>
 
-                {/* NOUVEAU PM10 */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--glass-border)', paddingBottom: '10px' }}>
                     <span>PM10</span><strong>{currentCity.pm10} µg/m³</strong>
                 </div>
@@ -58,10 +57,11 @@ const TabDashboard = ({ currentCity, historyData, setShowHealthModal, onMapClick
             </div>
 
             {/* Graphique Historique */}
-            <div className="bento-card" style={{ gridColumn: '1 / -1', height: '300px' }}>
+            <div className="bento-card" style={{ gridColumn: '1 / -1', height: '350px', paddingBottom: '20px' }}>
                 <h3 style={{ marginBottom: '15px' }}>Historique (7 Jours)</h3>
                 <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={historyData} margin={{ left: -20, right: 10 }}>
+                    {/* CORRECTION ICI : Ajout de bottom: 30 pour laisser la place au texte */}
+                    <AreaChart data={historyData} margin={{ top: 10, left: -20, right: 10, bottom: 30 }}>
                         <defs>
                             <linearGradient id="colorAqi" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#2563eb" stopOpacity={0.8} />
@@ -69,7 +69,10 @@ const TabDashboard = ({ currentCity, historyData, setShowHealthModal, onMapClick
                             </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--glass-border)" />
-                        <XAxis dataKey="time" minTickGap={30} tick={{ fill: 'var(--text-secondary)' }} />
+
+                        {/* tickMargin pousse un peu le texte vers le bas pour l'aérer */}
+                        <XAxis dataKey="time" minTickGap={30} tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} tickMargin={10} />
+
                         <YAxis tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} tickCount={5} />
                         <Tooltip contentStyle={{ backgroundColor: 'var(--card-bg)', borderRadius: '12px', border: 'none' }} />
                         <Area type="monotone" dataKey="aqi" stroke="#2563eb" fillOpacity={1} fill="url(#colorAqi)" strokeWidth={3} />
