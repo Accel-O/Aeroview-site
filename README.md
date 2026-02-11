@@ -5,11 +5,11 @@ Le but du site est de visualiser la pollution (AQI, PM2.5, Ozone...) partout dan
 
 ## Auteurs
 Projet réalisé par :
-* Yacine
-* Matis
-* Ramy
-* Mehdi
-* Wassim
+* Yacine ZEHAR
+* Matis LUSINE
+* Ramy GHEZLI
+* Mehdi BOUCHAMA
+* Wassim DJEZZAR
 
 ---
 
